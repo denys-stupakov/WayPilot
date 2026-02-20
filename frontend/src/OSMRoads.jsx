@@ -85,7 +85,7 @@ export default function OSMRoads() {
     }
 
     const stopsParam = encodeURIComponent(JSON.stringify(stops));
-    const url = `http://localhost:3001/route-stream?stops=${stopsParam}&mode1=${mode1}&mode2=${mode2}&vehicleLength=${vehicleLength}`;
+    const url = `http://147.232.204.240:3001/route-stream?stops=${stopsParam}&mode1=${mode1}&mode2=${mode2}&vehicleLength=${vehicleLength}`;
 
     const source = new EventSource(url);
     sourceRef.current = source;
