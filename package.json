@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@dnd-kit/utilities": "^3.2.2"
+  }
+}

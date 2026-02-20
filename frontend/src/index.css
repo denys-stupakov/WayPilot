@@ -1,0 +1,50 @@
+@import "leaflet/dist/leaflet.css";
+@import "tailwindcss";
+
+@layer components {
+    .img-nav {
+        @apply w-full;
+    }
+
+    .img-container {
+        @apply w-8;
+    }
+
+    .nav {
+        @apply flex items-center;
+    }
+}
+
+.leaflet-tooltip.coordinate-tooltip {
+    background: rgba(255, 255, 255, 0.9);
+    color: #111;
+    border: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 3px 8px;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    backdrop-filter: blur(6px) saturate(180%);
+    -webkit-backdrop-filter: blur(6px) saturate(180%);
+}
+
+
+.leaflet-tooltip.coordinate-tooltip span {
+    opacity: 0.95;
+}
+
+/* small white pointer */
+.leaflet-tooltip.coordinate-tooltip::before {
+    border-top-color: rgba(255, 255, 255, 0.9);
+}
+
+.stop {
+    position: relative;
+    width: 100%;
+}
+
+.stop::after {
+  content: "";
+  @apply absolute left-3 top-10 w-1 h-4 rounded-[10px] bg-[rgba(118,118,128,0.24)];
+}

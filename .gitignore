@@ -1,0 +1,5 @@
+*.ndjson
+node_modules/
+.idea/
+cache/
+venv/
