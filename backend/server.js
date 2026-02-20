@@ -136,6 +136,8 @@ function buildGraph(parsed, nodes) {
 
       let minRadius = calculateMinRadius(segment);
 
+      console.log(minRadius)
+
       nodes.addSegment(start.nodeId, end.nodeId, segment);
       graph.addEdge(
         start.nodeId,
