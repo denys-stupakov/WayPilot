@@ -318,6 +318,7 @@ app.get("/route-stream", async (req, res) => {
 
 const PORT = 3001;
 loadGraph().then(() => {
+  console.log("Graph loaded, starting server...");
   app.listen(PORT, '0.0.0.0', () => {
   });
 });
