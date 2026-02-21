@@ -40,7 +40,7 @@ export default function OSMRoads() {
       return;
     }
 
-    const key = window.crypto.randomUUID();
+    const key = crypto.randomUUID();
 
     setStops(prev => {
       const newStops = [...prev];
