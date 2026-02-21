@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Polyline } from "react-leaflet";
 import { motion, AnimatePresence } from "framer-motion";
 import "leaflet/dist/leaflet.css";
 import { Info } from "lucide-react";
+import { v4 as uuidv4 } from "uuid"
 
 import { arrayMove } from '@dnd-kit/sortable';
 
@@ -40,7 +41,7 @@ export default function OSMRoads() {
       return;
     }
 
-    const key = crypto.randomUUID();
+    const key = uuidv4();
 
     setStops(prev => {
       const newStops = [...prev];
