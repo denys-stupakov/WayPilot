@@ -217,7 +217,7 @@ export default function OSMRoads() {
         >
           <Info size={24} />
         </motion.button>
-        <span className="text-gray-800 text-sm opacity-80 select-none">zorochev</span>
+        <span className="text-gray-800 text-sm opacity-80 select-none">zorochevv</span>
       </div>
 
       {/* ---------------- Floating Help ---------------- */}
