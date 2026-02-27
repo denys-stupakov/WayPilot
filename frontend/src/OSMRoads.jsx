@@ -26,7 +26,7 @@ export default function OSMRoads() {
   const [stops, setStops] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
   const [addStopId, setAddStopId] = useState(false);
-  const [vehicleLength, setVehicleLength] = useState(0);
+  const [vehicleWeight, setvehicleWeight] = useState(0);
 
   const sourceRef = useRef(null);
 
@@ -68,7 +68,7 @@ export default function OSMRoads() {
     setRoutes1([]);
     setRoutes2([]);
     setVisibleRoutes({});
-    setVehicleLength(0);
+    setvehicleWeight(0);
     if (sourceRef.current) {
       sourceRef.current.close();
       sourceRef.current = null;
@@ -86,7 +86,7 @@ export default function OSMRoads() {
     }
 
     const stopsParam = encodeURIComponent(JSON.stringify(stops));
-    const url = `${import.meta.env.VITE_API_URL}/route-stream?stops=${stopsParam}&mode1=${mode1}&mode2=${mode2}&vehicleLength=${vehicleLength}`;
+    const url = `${import.meta.env.VITE_API_URL}/route-stream?stops=${stopsParam}&mode1=${mode1}&mode2=${mode2}&vehicleWeight=${vehicleWeight}`;
 
     const source = new EventSource(url);
     sourceRef.current = source;
@@ -177,8 +177,8 @@ export default function OSMRoads() {
         setMode1={setMode1}
         mode2={mode2}
         setMode2={setMode2}
-        vehicleLength={vehicleLength}
-        setVehicleLength={setVehicleLength}
+        vehicleWeight={vehicleWeight}
+        setvehicleWeight={setvehicleWeight}
         startStreamingRoutes={startStreamingRoutes}
         resetAll={resetAll}
       />

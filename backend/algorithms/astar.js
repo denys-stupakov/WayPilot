@@ -22,6 +22,20 @@ const TRAFFIC_LIGHT_WAIT_TIMES = {
 
 const DEFAULT_WAIT_TIME = 30;
 
+// Smoothness penalty model
+const SMOOTHNESS_PENALTY = {
+  excellent: 1.0,
+  good: 1.05,
+  intermediate: 1.15,
+  bad: 1.35,
+  very_bad: 1.6,
+  horrible: 2.0,
+  very_horrible: 3.0,
+  impassable: Infinity
+};
+
+const DEFAULT_SMOOTHNESS_FACTOR = 1.1;
+
 // ============================================================================
 // Utility Functions
 // ============================================================================
@@ -49,7 +63,7 @@ function calculateSegmentTime(distance, maxspeed) {
 function getTrafficLightDelay(edge) {
   const highway = edge.tags?.highway || "unclassified";
   const wait = TRAFFIC_LIGHT_WAIT_TIMES[highway] ?? DEFAULT_WAIT_TIME;
-  return wait / 2; // EXPECTED delay
+  return wait / 2;
 }
 
 // ============================================================================
@@ -57,6 +71,7 @@ function getTrafficLightDelay(edge) {
 // ============================================================================
 
 const PROFILES = {
+
   shortest: {
     cost(edge) {
       return edge.distance;
@@ -90,16 +105,105 @@ const PROFILES = {
     }
   },
 
-  hgv: {
+  weight: {
     cost(edge) {
       return edge.distance;
     },
     heuristic(from, to) {
       return calculateDistanceHeuristic(from, to);
     },
-    canTraverse(edge, ctx) {
-      const edgeRadius = edge.weights?.minRadius ?? Infinity;
-      return edgeRadius >= ctx.vehicleMinRadius;
+    canTraverse(edge, vehicleWeight) {
+      if (edge.weights?.maxweight) {
+        const maxWeight = parseFloat(edge.weights.maxweight);
+        return vehicleWeight <= maxWeight;
+      }
+      return true;
+    }
+  },
+
+  smoothness: {
+    cost(edge) {
+      const baseTime = edge.distance;
+
+      const smoothnessTag = edge.weights?.smoothness;
+      const factor =
+        SMOOTHNESS_PENALTY[smoothnessTag] ??
+        DEFAULT_SMOOTHNESS_FACTOR;
+
+      return baseTime * factor;
+    },
+
+    heuristic(from, to) {
+      return calculateDistanceHeuristic(from, to);
+    }
+  },
+
+  hgv: {
+    cost(edge, nodeManager, toNode, vehicleWeight = 0) {
+      const smoothness = edge.weights?.smoothness;
+
+      const baseTime =
+        edge.distance
+
+      // -------------------------
+      // HGV PREFERENCE FACTOR
+      // -------------------------
+
+      let hgvFactor = 1.0;
+
+      if (edge.weights?.hgv !== "no") {
+        hgvFactor = 1 // strongly preferred
+      }
+
+      // -------------------------
+      // HIGHWAY TYPE FACTOR
+      // -------------------------
+
+      const highway = edge.tags?.highway;
+
+      const highwayFactors = {
+        motorway: 0.75,
+        trunk: 0.85,
+        primary: 1.0,
+        secondary: 1.1,
+        tertiary: 1.25,
+        residential: 1.6,
+        service: 1.8,
+        living_street: 2.0,
+        track: 3.0,
+        unclassified: 1.4
+      };
+
+      const highwayFactor =
+        highwayFactors[highway] ?? 1.3;
+
+      // -------------------------
+      // LANE FACTOR
+      // -------------------------
+
+      let laneFactor = 1.0;
+
+      if (edge.weights?.lanes) {
+        const lanes = parseInt(edge.weights.lanes);
+
+        if (!isNaN(lanes)) {
+          laneFactor = 1 - Math.min(lanes * 0.05, 0.25);
+          // max 25% bonus for many lanes
+        }
+      }
+
+      // -------------------------
+      // FINAL COST
+      // -------------------------
+
+      return baseTime *
+            hgvFactor *
+            highwayFactor *
+            laneFactor;
+    },
+
+    heuristic(from, to) {
+      return calculateDistanceHeuristic(from, to);
     }
   }
 };
@@ -113,20 +217,16 @@ function astar(
   nodeManager,
   startNodeId,
   goalNodeId,
-  { profile = "shortest", vehicleLength = 20 } = {}
+  { profile = "shortest", vehicleWeight = 0 } = {}
 ) {
-  const startCoords = nodeManager.nodeCoords[startNodeId];
-  const goalCoords = nodeManager.nodeCoords[goalNodeId];
+  const startCoords = nodeManager.nodeToCoord[startNodeId];
+  const goalCoords = nodeManager.nodeToCoord[goalNodeId];
   if (!startCoords || !goalCoords) return null;
 
   const routingProfile = PROFILES[profile];
   if (!routingProfile) {
     throw new Error(`Unknown routing profile: ${profile}`);
   }
-
-  const ctx = {
-    vehicleMinRadius: vehicleLength * 0.6
-  };
 
   const openSet = new MinHeap();
   const closedSet = new Set();
@@ -158,7 +258,7 @@ function astar(
 
       if (
         routingProfile.canTraverse &&
-        !routingProfile.canTraverse(edge, ctx)
+        !routingProfile.canTraverse(edge, vehicleWeight)
       ) {
         continue;
       }
@@ -167,7 +267,7 @@ function astar(
         { ...edge, distance },
         nodeManager,
         neighborId,
-        ctx
+        vehicleWeight
       );
 
       const tentativeG = gScore.get(current) + edgeCost;
@@ -177,7 +277,7 @@ function astar(
         gScore.set(neighborId, tentativeG);
 
         const h = routingProfile.heuristic(
-          nodeManager.nodeCoords[neighborId],
+          nodeManager.nodeToCoord[neighborId],
           goalCoords
         );
 
@@ -190,7 +290,7 @@ function astar(
 }
 
 // ============================================================================
-// Path Reconstruction (REALISTIC ETA)
+// Path Reconstruction
 // ============================================================================
 
 function reconstructPath(goalNode, cameFrom, graph, nodeManager) {
@@ -233,7 +333,7 @@ function reconstructPath(goalNode, cameFrom, graph, nodeManager) {
   }
 
   smoothPathCoords.push(
-    nodeManager.nodeCoords[path[path.length - 1]]
+    nodeManager.nodeToCoord[path[path.length - 1]]
   );
 
   return {
@@ -243,7 +343,5 @@ function reconstructPath(goalNode, cameFrom, graph, nodeManager) {
     smoothPathCoords
   };
 }
-
-// ============================================================================
 
 module.exports = astar;

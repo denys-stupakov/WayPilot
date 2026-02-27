@@ -1,24 +1,26 @@
-class OptimizedNodeManager {
+class Nodes {
   constructor() {
-    this.nodeCoords = [];
-    this.nodeImportance = [];
-    this.pathSegments = new Map();
-    this.coordToNode = new Map();
     this.nodeCount = 0;
+    this.nodeToCoord = [];
+    this.coordToNode = new Map();
+
+    this.nodeImportance = [];
+
+    this.pathSegments = new Map();
     this.importantNodeIds = [];
     this.trafficLights = new Set();
   }
 
   getOrCreateNode(lat, lon) {
-    const key = `${lat},${lon}`;
+    const coord = `${lat},${lon}`;
 
-    if (this.coordToNode.has(key)) {
-      return this.coordToNode.get(key);
+    if (this.coordToNode.has(coord)) {
+      return this.coordToNode.get(coord);
     }
 
     const nodeId = this.nodeCount++;
-    this.coordToNode.set(key, nodeId);
-    this.nodeCoords[nodeId] = [lat, lon];
+    this.coordToNode.set(coord, nodeId);
+    this.nodeToCoord[nodeId] = [lat, lon];
     this.nodeImportance[nodeId] = false;
 
     return nodeId;
@@ -58,7 +60,7 @@ function mergeRoads(roads) {
   // after loop finishes, all the roads are divided into buckets of same attributes
   const buckets = new Map();
   for (const road of roads) {
-    const key = `${road.oneway}|${road.hgv}|${road.maxspeed}|${road.maxweight}|${road.maxheight}|${road.maxwidth}`;
+    const key = `${road.oneway}|${road.hgv}|${road.maxweight}|${road.maxspeed}|${road.smoothness}|${road.lanes}|${road.lanes_forward}|${road.lanes_backward}`;
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key).push(road);
   }
@@ -141,14 +143,14 @@ function mergeRoads(roads) {
 function mergeAttributes(r1, r2) {
   return {
     ...r1,
-    lanes: Math.min(r1.lanes ?? Infinity, r2.lanes ?? Infinity),
+    lanes: r1.lanes,
+    lanes_forward: r1.lanes_forward,
+    lanes_backward: r1.lanes_backward,
     maxspeed: Math.min(r1.maxspeed ?? Infinity, r2.maxspeed ?? Infinity),
-    maxweight: Math.min(r1.maxweight ?? Infinity, r2.maxweight ?? Infinity),
-    maxheight: Math.min(r1.maxheight ?? Infinity, r2.maxheight ?? Infinity),
     maxwidth: Math.min(r1.maxwidth ?? Infinity, r2.maxwidth ?? Infinity),
     hgv: (r1.hgv === "no" || r2.hgv === "no") ? "no" : "yes",
     oneway: (r1.oneway === "yes" || r2.oneway === "yes") ? "yes" : "no"
   };
 }
 
-module.exports = { OptimizedNodeManager, mergeRoads };
+module.exports = { Nodes, mergeRoads };
