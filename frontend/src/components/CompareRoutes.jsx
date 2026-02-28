@@ -42,14 +42,12 @@ function CompareRoutes({
             >
                 <option value="shortest">Najkratšia trasa</option>
                 <option value="traffic-lights">Vyhnúť sa semaforom</option>
-                <option value="height">Obmedzenie výšky</option>
-                <option value="weight">Obmedzenie hmotnosti</option>
                 <option value="speed">Najrýchlejšia trasa</option>
                 <option value="smoothness">smoothness</option>
-                <option value="hgv">hgv</option>
+                <option value="hgv">nákladné vozidlo</option>
             </select>
 
-            {mode2 === "weight" && (
+            {mode2 === "hgv" && (
                 <div>
                 <label className="block text-sm text-gray-700 mb-1">
                     Hmotnosť vozidla (t)

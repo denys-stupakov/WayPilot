@@ -182,6 +182,7 @@ const PROFILES = {
       // -------------------------
 
       let laneFactor = 1.0;
+      
 
       if (edge.weights?.lanes) {
         const lanes = parseInt(edge.weights.lanes);
