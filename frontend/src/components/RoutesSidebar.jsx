@@ -8,7 +8,7 @@ function RoutesSidebar({
 
   return (
     <div
-      className="fixed top-6 left-6 z-[1000] flex flex-col gap-4 p-4 w-80 rounded-2xl"
+      className="fixed bottom-6 right-6 z-[1000] flex flex-col gap-4 p-4 w-80 rounded-2xl"
       style={{
         height: "40vh",
         maxHeight: "40vh",
@@ -22,24 +22,23 @@ function RoutesSidebar({
           "inset 0 0 1px rgba(255,255,255,0.5), 0 8px 30px rgba(0,0,0,0.2)"
       }}
     >
-      <h2 className="text-lg font-semibold mb-2">Routes</h2>
+      <h2 className="text-lg font-semibold mb-2">Trasy</h2>
 
       <div className="space-y-2">
-        {/* First Path */}
+        {/* Prvá trasa */}
         <div>
           <h3 className="text-sm font-medium text-blue-600 mb-1">
-            First Path (Blue)
+            Prvá trasa (modrá)
           </h3>
 
           {routes1.map((route, idx) => {
-            if (!route.key) return null; // safety check
+            if (!route.key) return null;
 
             return (
               <div
                 key={route.key}
-                className={`flex justify-between items-center p-2 rounded-lg cursor-pointer ${
-                  visibleRoutes[route.key] ? "bg-blue-100" : "bg-transparent"
-                }`}
+                className={`flex justify-between items-center p-2 rounded-lg cursor-pointer ${visibleRoutes[route.key] ? "bg-blue-100" : "bg-transparent"
+                  }`}
                 onClick={() => toggleRouteVisibility(route.key)}
               >
                 <div className="text-sm">
@@ -48,20 +47,18 @@ function RoutesSidebar({
                   {(route.time / 3600).toFixed(2)} h
                 </div>
 
-                <div
-                  className={`w-4 h-4 rounded-full ${
-                    visibleRoutes[route.key] ? "bg-blue-500" : "bg-gray-300"
-                  }`}
-                />
+                <div className="text-sm font-medium text-blue-700">
+                  {visibleRoutes[route.key] ? "Skryť" : "Zobraziť"}
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* Second Path */}
+        {/* Druhá trasa */}
         <div>
           <h3 className="text-sm font-medium text-red-600 mb-1">
-            Second Path (Red)
+            Druhá trasa (červená)
           </h3>
 
           {routes2.map((route, idx) => {
@@ -70,9 +67,8 @@ function RoutesSidebar({
             return (
               <div
                 key={route.key}
-                className={`flex justify-between items-center p-2 rounded-lg cursor-pointer ${
-                  visibleRoutes[route.key] ? "bg-red-100" : "bg-transparent"
-                }`}
+                className={`flex justify-between items-center p-2 rounded-lg cursor-pointer ${visibleRoutes[route.key] ? "bg-red-100" : "bg-transparent"
+                  }`}
                 onClick={() => toggleRouteVisibility(route.key)}
               >
                 <div className="text-sm">
@@ -81,11 +77,9 @@ function RoutesSidebar({
                   {(route.time / 3600).toFixed(2)} h
                 </div>
 
-                <div
-                  className={`w-4 h-4 rounded-full ${
-                    visibleRoutes[route.key] ? "bg-red-500" : "bg-gray-300"
-                  }`}
-                />
+                <div className="text-sm font-medium text-red-700">
+                  {visibleRoutes[route.key] ? "Skryť" : "Zobraziť"}
+                </div>
               </div>
             );
           })}

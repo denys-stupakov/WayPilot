@@ -101,7 +101,7 @@ app.get("/route-stream", async (req, res) => {
     // --- Compute route2 (optional) ---
     let route2 = null;
 
-    if (mode2 === "trafficLights") {
+    if (mode2 === "traffic-lights") {
       route2 = astar(
         graph,
         nodes,

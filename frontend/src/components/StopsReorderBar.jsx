@@ -36,7 +36,7 @@ function StopsReorderBar({
           strategy={verticalListSortingStrategy}
         >
           <div className="header">
-            <h1>Directions</h1>
+            <h1>Trasa</h1>
           </div>
 
           <div className="flex flex-col gap-6">
@@ -84,7 +84,7 @@ function StopsReorderBar({
               >
                 <Plus size={20} />
               </button>
-              <h1>Add stop</h1>
+              <h1>Pridať zastávku</h1>
             </div>
           </div>
         </SortableContext>

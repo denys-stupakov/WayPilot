@@ -26,11 +26,10 @@ export default function OSMRoads() {
   const [stops, setStops] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
   const [addStopId, setAddStopId] = useState(false);
-  const [vehicleWeight, setvehicleWeight] = useState(0);
+  const [vehicleWeight, setvehicleWeight] = useState(7.5);
 
   const sourceRef = useRef(null);
 
-  // ---------------- Route update helper ----------------
   function handleRouteUpdate(routeData, isRoute1) {
     const { index, route1, route2, start, end } = routeData;
     const route = isRoute1 ? route1 : route2;
@@ -198,7 +197,7 @@ export default function OSMRoads() {
         handleDragEnd={handleDragEnd}
       />
 
-      {/* ---------------- Bottom Toolbar ---------------- */}
+      {/* ---------------- Spodný panel nástrojov ---------------- */}
       <div
         className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1100] flex items-center gap-6 px-8 py-4 rounded-[28px] text-gray-900 font-medium"
         style={{
@@ -211,23 +210,24 @@ export default function OSMRoads() {
       >
         <motion.button
           whileHover={{ scale: 1.1 }}
-          whileTap={{ scale:0.95 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setShowHelp(true)}
           className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-400/90 to-blue-600/90 shadow-[0_4px_12px_rgba(0,150,255,0.5)] hover:shadow-[0_6px_14px_rgba(0,150,255,0.6)] text-white"
         >
           <Info size={24} />
         </motion.button>
-        <span className="text-gray-800 text-sm opacity-80 select-none">zorochevv</span>
+
+        <span className="text-gray-800 text-sm opacity-80 select-none">Pomoc</span>
       </div>
 
-      {/* ---------------- Floating Help ---------------- */}
+      {/* ---------------- Plávajúce okno s návodom ---------------- */}
       <AnimatePresence>
         {showHelp && (
           <motion.div
-            initial={{ opacity: 0, y: 100, scale:0.95 }}
-            animate={{ opacity: 1, y: 0, scale:1 }}
-            exit={{ opacity:0, y:100, scale:0.95 }}
-            transition={{ duration:0.2, ease:"easeOut" }}
+            initial={{ opacity: 0, y: 100, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="fixed bottom-32 left-1/2 -translate-x-1/2 w-[360px] max-h-[70vh] z-[1200] rounded-2xl text-gray-900 p-6 overflow-y-auto"
             style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.45), rgba(255,255,255,0.25))",
@@ -238,14 +238,20 @@ export default function OSMRoads() {
             }}
           >
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold">Instructions</h2>
-              <button onClick={() => setShowHelp(false)} className="text-gray-600 hover:text-gray-900 transition text-sm">✕</button>
+              <h2 className="text-lg font-semibold">Návod</h2>
+              <button
+                onClick={() => setShowHelp(false)}
+                className="text-gray-600 hover:text-gray-900 transition text-sm"
+              >
+                ✕
+              </button>
             </div>
+
             <ul className="space-y-2 text-sm text-gray-800">
-              <li>🟢 Tap on the map to add stops (minimum 2 required).</li>
-              <li>🔵 Drag stops above to reorder them before comparing.</li>
-              <li>⚙️ Press <b>Compare Routes</b> to stream and visualize paths.</li>
-              <li>🧹 Press <b>Reset</b> to clear all markers and paths.</li>
+              <li>🟢 Kliknutím na mapu pridáte zastávky (sú potrebné aspoň 2).</li>
+              <li>🔵 Potiahnutím zastávok vyššie zmeníte ich poradie pred porovnaním trás.</li>
+              <li>⚙️ Stlačte <b>Porovnať trasy</b> na zobrazenie a porovnanie trás.</li>
+              <li>🧹 Stlačte <b>Resetovať</b> na vymazanie všetkých bodov a trás.</li>
             </ul>
           </motion.div>
         )}

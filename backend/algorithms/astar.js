@@ -115,11 +115,13 @@ const PROFILES = {
     canTraverse(edge, vehicleWeight) {
       if (edge.weights?.maxweight) {
         const maxWeight = parseFloat(edge.weights.maxweight);
+        console.log(`skipped ${edge.weights.maxweight}`)
         return vehicleWeight <= maxWeight;
       }
       return true;
     }
   },
+  
 
   smoothness: {
     cost(edge) {
@@ -182,7 +184,7 @@ const PROFILES = {
       // -------------------------
 
       let laneFactor = 1.0;
-      
+
 
       if (edge.weights?.lanes) {
         const lanes = parseInt(edge.weights.lanes);
