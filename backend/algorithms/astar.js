@@ -121,7 +121,7 @@ const PROFILES = {
       return true;
     }
   },
-  
+
 
   smoothness: {
     cost(edge) {
@@ -142,71 +142,53 @@ const PROFILES = {
 
   hgv: {
     cost(edge, nodeManager, toNode, vehicleWeight = 0) {
-      const smoothness = edge.weights?.smoothness;
-
-      const baseTime =
-        edge.distance
-
-      // -------------------------
-      // HGV PREFERENCE FACTOR
-      // -------------------------
-
-      let hgvFactor = 1.0;
-
-      if (edge.weights?.hgv !== "no") {
-        hgvFactor = 1 // strongly preferred
-      }
-
-      // -------------------------
-      // HIGHWAY TYPE FACTOR
-      // -------------------------
+      const baseDistance = edge.distance;
 
       const highway = edge.tags?.highway;
 
       const highwayFactors = {
-        motorway: 0.75,
-        trunk: 0.85,
-        primary: 1.0,
-        secondary: 1.1,
-        tertiary: 1.25,
-        residential: 1.6,
-        service: 1.8,
-        living_street: 2.0,
-        track: 3.0,
-        unclassified: 1.4
+        motorway: 1.0,
+        trunk: 1.05,
+        primary: 1.15,
+        secondary: 1.3,
+        tertiary: 1.5,
+        residential: 1.9,
+        service: 2.2,
+        living_street: 2.8,
+        track: 4.0,
+        unclassified: 1.6
       };
 
-      const highwayFactor =
-        highwayFactors[highway] ?? 1.3;
-
-      // -------------------------
-      // LANE FACTOR
-      // -------------------------
+      const highwayFactor = highwayFactors[highway] ?? 1.7;
 
       let laneFactor = 1.0;
 
-
       if (edge.weights?.lanes) {
-        const lanes = parseInt(edge.weights.lanes);
+        const lanes = parseInt(edge.weights.lanes, 10);
 
-        if (!isNaN(lanes)) {
-          laneFactor = 1 - Math.min(lanes * 0.05, 0.25);
-          // max 25% bonus for many lanes
+        if (!isNaN(lanes) && lanes > 1) {
+          laneFactor = Math.max(1.0, 1.1 - Math.min((lanes - 1) * 0.03, 0.1));
         }
       }
 
-      // -------------------------
-      // FINAL COST
-      // -------------------------
-
-      return baseTime *
-            hgvFactor *
-            highwayFactor *
-            laneFactor;
+      return baseDistance * highwayFactor * laneFactor;
     },
 
     heuristic(from, to) {
       return calculateDistanceHeuristic(from, to);
+    },
+
+    canTraverse(edge, vehicleWeight) {
+      if (edge.weights?.hgv === "no") {
+        return false;
+      }
+
+      if (edge.weights?.maxweight) {
+        const maxWeight = parseFloat(edge.weights.maxweight);
+        console.log(`${vehicleWeight <= maxWeight}, ${edge.weights.maxweight}, ${vehicleWeight}`)
+        return vehicleWeight <= maxWeight;
+      }
+      return true;
     }
   }
 };

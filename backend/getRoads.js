@@ -3,16 +3,16 @@ const fileSystem = require("fs");
 const readline = require("readline");
 
 const roadDefaultTags = {
-  motorway: { maxspeed: 130, maxwidth: 2.6, lanes: 4, laneWidth: 3.75, hgv: "yes" },
-  trunk: { maxspeed: 110, maxwidth: 2.6, lanes: 2, laneWidth: 3.5, hgv: "yes" },
-  primary: { maxspeed: 90, maxwidth: 2.6, lanes: 2, laneWidth: 3.25, hgv: "yes" },
-  secondary: { maxspeed: 70, maxwidth: 2.55, lanes: 2, laneWidth: 3.0, hgv: "yes" },
-  tertiary: { maxspeed: 50, maxwidth: 2.55, lanes: 1, laneWidth: 3.0, hgv: "yes" },
-  residential: { maxspeed: 30,  maxwidth: 2.55, lanes: 1, laneWidth: 2.8, hgv: "no" },
-  service: { maxspeed: 25,  maxwidth: 2.5, lanes: 1, laneWidth: 2.5, hgv: "no" },
-  track: { maxspeed: 20,  maxwidth: 2.5, lanes: 1, laneWidth: 2.5, hgv: "no" },
-  unclassified: { maxspeed: 20,  maxwidth: 2.5, lanes: 1, laneWidth: 2.75, hgv: "no" },
-  living_street: { maxspeed: 20,  maxwidth: 2.5, lanes: 1, laneWidth: 2.75, hgv: "no" }
+  motorway: { maxspeed: 130, maxwidth: 2.6, lanes: 4, laneWidth: 3.75},
+  trunk: { maxspeed: 110, maxwidth: 2.6, lanes: 2, laneWidth: 3.5},
+  primary: { maxspeed: 90, maxwidth: 2.6, lanes: 2, laneWidth: 3.25},
+  secondary: { maxspeed: 70, maxwidth: 2.55, lanes: 2, laneWidth: 3.0},
+  tertiary: { maxspeed: 50, maxwidth: 2.55, lanes: 1, laneWidth: 3.0},
+  residential: { maxspeed: 30,  maxwidth: 2.55, lanes: 1, laneWidth: 2.8},
+  service: { maxspeed: 25,  maxwidth: 2.5, lanes: 1, laneWidth: 2.5},
+  track: { maxspeed: 20,  maxwidth: 2.5, lanes: 1, laneWidth: 2.5},
+  unclassified: { maxspeed: 20,  maxwidth: 2.5, lanes: 1, laneWidth: 2.75},
+  living_street: { maxspeed: 20,  maxwidth: 2.5, lanes: 1, laneWidth: 2.75}
 };
 
 async function getRoads() {
@@ -46,7 +46,7 @@ async function getRoads() {
         const maxweight = feature.properties?.maxweight;
         const maxheight = feature.properties?.maxheight || 4;
         const maxwidth = feature.properties?.maxwidth;
-        const hgv = feature.properties?.hgv || roadDefaultTags[highway]?.hgv || "yes";
+        const hgv = feature.properties?.hgv || "yes";
         const oneway = feature.properties?.oneway || "no";
         const lanes = feature.properties?.lanes || roadDefaultTags[highway]?.lanes || 1;
         let lanes_forward = 0;

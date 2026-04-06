@@ -56,8 +56,7 @@ app.get("/route-stream", async (req, res) => {
   });
 
   const stops = JSON.parse(req.query.stops);
-  const { mode1 = "normal", mode2 = "trafficLights" } = req.query;
-  const {vehicleWeight} = req.query
+  const { mode1 = "normal", mode2 = "trafficLights", vehicleWeight = 0 } = req.query;
 
   console.log(vehicleWeight)
 
@@ -147,7 +146,8 @@ app.get("/route-stream", async (req, res) => {
         startId,
         endId,
         {
-          profile: "hgv"
+          profile: "hgv",
+          vehicleWeight: vehicleWeight
         }
       );
     }
