@@ -6,6 +6,15 @@ function RoutesSidebar({
 }) {
   if (routes1.length === 0 && routes2.length === 0) return null;
 
+  function formatTime(seconds) {
+    const totalHours = seconds / 3600;
+
+    const hours = Math.floor(totalHours);
+    const minutes = Math.round((totalHours - hours) * 60);
+
+    return `${hours} h ${minutes} min`;
+  }
+
   return (
     <div
       className="fixed bottom-6 right-6 z-[1000] flex flex-col gap-4 p-4 w-80 rounded-2xl"
@@ -44,7 +53,7 @@ function RoutesSidebar({
                 <div className="text-sm">
                   {idx + 1} → {idx + 2} |{" "}
                   {(route.distance / 1000).toFixed(2)} km |{" "}
-                  {(route.time / 3600).toFixed(2)} h
+                  {formatTime(route.time)}
                 </div>
 
                 <div className="text-sm font-medium text-blue-700">
@@ -74,7 +83,7 @@ function RoutesSidebar({
                 <div className="text-sm">
                   {idx + 1} → {idx + 2} |{" "}
                   {(route.distance / 1000).toFixed(2)} km |{" "}
-                  {(route.time / 3600).toFixed(2)} h
+                  {formatTime(route.time)}
                 </div>
 
                 <div className="text-sm font-medium text-red-700">

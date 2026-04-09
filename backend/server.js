@@ -91,7 +91,7 @@ app.get("/route-stream", async (req, res) => {
     end.snapped = { lat: endNearest.lat, lng: endNearest.lon };
 
     // --- Compute and send route1 ---
-    const route1 = astar(graph, nodes, startId, endId, { mode: "shortest" }, 0);
+    const route1 = astar(graph, nodes, startId, endId, { profile: mode1, vehicleWeight: parseFloat(vehicleWeight) || 0 },);
     res.write(`event: route1\ndata: ${JSON.stringify({ index: i, route1, start, end })}\n\n`);
 
     // ⚡ Give Node time to flush the buffer before route2
@@ -100,57 +100,13 @@ app.get("/route-stream", async (req, res) => {
     // --- Compute route2 (optional) ---
     let route2 = null;
 
-    if (mode2 === "traffic-lights") {
-      route2 = astar(
-        graph,
-        nodes,
-        startId,
-        endId,
-        { profile: "avoidTrafficLights" }
-      );
-
-    } else if (mode2 === "speed") {
-      route2 = astar(
-        graph,
-        nodes,
-        startId,
-        endId,
-        { profile: "fastest" }
-      );
-
-    } else if (mode2 === "weight") {
-      route2 = astar(
-        graph,
-        nodes,
-        startId,
-        endId,
-        {
-          profile: "weight",
-          vehicleWeight: vehicleWeight
-        }
-      );
-    } else if (mode2 === "smoothness") {
-      route2 = astar(
-        graph,
-        nodes,
-        startId,
-        endId,
-        {
-          profile: "smoothness"
-        }
-      );
-    } else if (mode2 === "hgv") {
-      route2 = astar(
-        graph,
-        nodes,
-        startId,
-        endId,
-        {
-          profile: "hgv",
-          vehicleWeight: vehicleWeight
-        }
-      );
-    }
+    route2 = astar(
+      graph,
+      nodes,
+      startId,
+      endId,
+      { profile: mode2, vehicleWeight: parseFloat(vehicleWeight) || 0 },
+    );
 
     res.write(
       `event: route2\ndata: ${JSON.stringify({
