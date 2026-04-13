@@ -17,6 +17,12 @@ function StopsReorderBar({
 }) {
   if (stops.length === 0) return null;
 
+  const updateStopName = (id, newName) => {
+    setStops(prev => prev.map(stop => 
+      stop.id === id ? { ...stop, name: newName } : stop
+    ));
+  };
+
   return (
     <div
       className="fixed bottom-6 left-6 z-[1000] flex flex-col gap-2 p-4 h-100 w-60 overflow-y-auto overflow-x-hidden rounded-2xl"
@@ -52,11 +58,21 @@ function StopsReorderBar({
                       <Navigation size={20} />
                     </div>
 
-                    <div>
-                      {stops.findIndex((s) => s.id === stop.id) + 1}
+                    <div className="flex flex-col items-start flex-1 px-2">
+                      <div className="text-xs text-gray-600">
+                        {stops.findIndex((s) => s.id === stop.id) + 1}
+                      </div>
+                      <input
+                        type="text"
+                        value={stop.name || ""}
+                        onChange={(e) => updateStopName(stop.id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full text-sm text-gray-900 bg-white bg-opacity-70 rounded px-1 py-0.5 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        placeholder="Stop name"
+                      />
                     </div>
 
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

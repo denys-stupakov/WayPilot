@@ -21,7 +21,7 @@ export default function OSMRoads() {
   const [routes2, setRoutes2] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [visibleRoutes, setVisibleRoutes] = useState({});
-  const [mode1, setMode1] = useState("normal");
+  const [mode1, setMode1] = useState("shortest");
   const [mode2, setMode2] = useState("trafficLights");
   const [stops, setStops] = useState([]);
   const [showHelp, setShowHelp] = useState(false);

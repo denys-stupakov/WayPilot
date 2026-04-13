@@ -15,7 +15,7 @@ function LocationMarker({
     useMapEvents({
         click(e) {
         if (stops.length < 2 || addStopId) {
-            const newStop = { id: genId(), lat: e.latlng.lat, lng: e.latlng.lng };
+            const newStop = { id: genId(), lat: e.latlng.lat, lng: e.latlng.lng, name: `Stop ${stops.length + 1}` };
             setStops((prev) => [...prev, newStop]);
             setAddStopId(false);
             setRoutes([]);
@@ -34,7 +34,7 @@ function LocationMarker({
                 opacity={1}
                 className="coordinate-tooltip"
             >
-                {stops.findIndex(s => s.id === stop.id) + 1}
+                {stops.findIndex(s => s.id === stop.id) + 1}. {stop.name || "Stop"}
             </Tooltip>
         </Marker>
     ));
