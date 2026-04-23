@@ -68,7 +68,7 @@ function StopsReorderBar({
                         onChange={(e) => updateStopName(stop.id, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
                         className="w-full text-sm text-gray-900 bg-white bg-opacity-70 rounded px-1 py-0.5 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                        placeholder="Stop name"
+                        placeholder="Názov zastávky"
                       />
                     </div>
 
