@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, Polyline } from "react-leaflet";
 import { motion, AnimatePresence } from "framer-motion";
 import "leaflet/dist/leaflet.css";
-import { Info } from "lucide-react";
+import { Info, GripHorizontal, Plus, Trash2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid"
 
 import { arrayMove } from '@dnd-kit/sortable';
@@ -100,12 +100,7 @@ export default function OSMRoads() {
         const data = JSON.parse(e.data);
         switch (data.type) {
           case "invalid_stop":
-            alert(`Stop at index ${data.index} is too far from known roads.`);
-            break;
-          case "route_computation_failed":
-            console.warn(`Route computation failed at segment ${data.index}: ${data.message}`);
-            break;
-          default:
+                alert(`Zastávka na indexe ${data.index} je príliš ďaleko od známych ciest.`);
             console.error("Unknown server error:", data);
         }
       } catch (err) {
@@ -166,7 +161,7 @@ export default function OSMRoads() {
           addStopId={addStopId}
           setAddStopId={setAddStopId}
         />
-        {routes.map(r => r.visible && (
+        {routes.map(r => r.visible && r.polyline?.length > 0 && (
           <Polyline key={r.key} positions={r.polyline} color={r.color} weight={4} />
         ))}
       </MapContainer>
@@ -228,7 +223,7 @@ export default function OSMRoads() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed bottom-32 left-1/2 -translate-x-1/2 w-[360px] max-h-[70vh] z-[1200] rounded-2xl text-gray-900 p-6 overflow-y-auto"
+            className="fixed bottom-32 left-1/2 -translate-x-1/2 w-[460px] max-h-[70vh] z-[1200] rounded-2xl text-gray-900 p-6 overflow-y-auto"
             style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.45), rgba(255,255,255,0.25))",
               backdropFilter: "blur(22px) saturate(180%)",
@@ -248,8 +243,36 @@ export default function OSMRoads() {
             </div>
 
             <ul className="space-y-2 text-sm text-gray-800">
-              <li>🟢 Kliknutím na mapu pridáte zastávky (sú potrebné aspoň 2).</li>
-              <li>🔵 Potiahnutím zastávok vyššie zmeníte ich poradie pred porovnaním trás.</li>
+              <li>Kliknutím na mapu pridáte zastávky (sú potrebné aspoň 2).</li>
+
+              <li>
+                Iba kliknutím na 
+                <button className="inline-flex align-middle mx-1 text-white bg-gray-500 rounded-3xl p-2 items-center justify-center">
+                  <Plus size={15} />
+                </button>
+                pridáte novú zastávku.
+              </li>
+
+              <li>
+                Potiahnutím 
+                <GripHorizontal className="inline-block align-middle mx-1" size={20} />
+                môžeme meniť poradie zastávok.
+              </li>
+
+              <li>
+                Kliknutím na 
+                <button
+                  className="inline-flex align-middle p-1 text-red-500"
+                >
+                  <Trash2 size={20} />
+                </button>
+                môžete vymazať zastávku.
+              </li>
+
+              <li>
+                V režime pre nákladné vozidlá je potrebné zadať hmotnosť vozidla.
+              </li>
+
               <li>⚙️ Stlačte <b>Porovnať trasy</b> na zobrazenie a porovnanie trás.</li>
               <li>🧹 Stlačte <b>Resetovať</b> na vymazanie všetkých bodov a trás.</li>
             </ul>

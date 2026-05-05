@@ -42,6 +42,7 @@ function RoutesSidebar({
 
           {routes1.map((route, idx) => {
             if (!route.key) return null;
+            const hasPath = route.smoothPathCoords?.length > 0;
 
             return (
               <div
@@ -52,8 +53,16 @@ function RoutesSidebar({
               >
                 <div className="text-sm">
                   {idx + 1} → {idx + 2} |{" "}
-                  {(route.distance / 1000).toFixed(2)} km |{" "}
-                  {formatTime(route.time)}
+                  {hasPath ? (
+                    <>
+                      {(route.distance / 1000).toFixed(2)} km |{" "}
+                      {formatTime(route.time)}
+                    </>
+                  ) : (
+                    <span className="text-red-600">
+                      {route.reason || "Trasa nebola nájdená"}
+                    </span>
+                  )}
                 </div>
 
                 <div className="text-sm font-medium text-blue-700">
@@ -72,6 +81,7 @@ function RoutesSidebar({
 
           {routes2.map((route, idx) => {
             if (!route.key) return null;
+            const hasPath = route.smoothPathCoords?.length > 0;
 
             return (
               <div
@@ -82,8 +92,16 @@ function RoutesSidebar({
               >
                 <div className="text-sm">
                   {idx + 1} → {idx + 2} |{" "}
-                  {(route.distance / 1000).toFixed(2)} km |{" "}
-                  {formatTime(route.time)}
+                  {hasPath ? (
+                    <>
+                      {(route.distance / 1000).toFixed(2)} km |{" "}
+                      {formatTime(route.time)}
+                    </>
+                  ) : (
+                    <span className="text-red-600">
+                      {route.reason || "Trasa nebola nájdená"}
+                    </span>
+                  )}
                 </div>
 
                 <div className="text-sm font-medium text-red-700">

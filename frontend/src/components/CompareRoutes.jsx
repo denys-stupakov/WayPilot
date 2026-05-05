@@ -51,7 +51,7 @@ function CompareRoutes({
                 <option value="hgv">Pre nákladné vozidlá</option>
             </select>
 
-            {mode2 === "hgv" && (
+            {(mode1 === "hgv" || mode2 === "hgv") && (
                 <div>
                     <label className="block text-sm text-gray-700 mb-1">
                         Hmotnosť vozidla (t)

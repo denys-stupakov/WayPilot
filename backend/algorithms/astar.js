@@ -51,6 +51,63 @@ function calculateDistanceHeuristic(fromCoords, toCoords) {
   );
 }
 
+function parseEdgeCapacity(edge) {
+  if (!edge) return 0;
+  if (edge.weights?.hgv === "no") return 0;
+
+  if (edge.weights?.maxweight) {
+    const parsed = parseFloat(edge.weights.maxweight);
+    return Number.isFinite(parsed) ? parsed : Infinity;
+  }
+
+  return Infinity;
+}
+
+function findMaxCapacityPath(graph, startNodeId, goalNodeId) {
+  const capacities = new Map([[startNodeId, Infinity]]);
+  const visited = new Set();
+  const queue = [{ nodeId: startNodeId, capacity: Infinity }];
+
+  while (queue.length) {
+    queue.sort((a, b) => b.capacity - a.capacity);
+    const { nodeId, capacity } = queue.shift();
+    if (visited.has(nodeId)) continue;
+    visited.add(nodeId);
+
+    if (nodeId === goalNodeId) {
+      return capacity;
+    }
+
+    const neighbors = graph.adj.get(nodeId) || [];
+    for (const neighbor of neighbors) {
+      const edge = graph.edgeMap.get(`${nodeId},${neighbor.nodeId}`);
+      if (!edge) continue;
+
+      const edgeCapacity = parseEdgeCapacity(edge);
+      if (edgeCapacity <= 0) continue;
+
+      const nextCapacity = Math.min(capacity, edgeCapacity);
+      const bestKnown = capacities.get(neighbor.nodeId) || 0;
+      if (nextCapacity > bestKnown) {
+        capacities.set(neighbor.nodeId, nextCapacity);
+        queue.push({ nodeId: neighbor.nodeId, capacity: nextCapacity });
+      }
+    }
+  }
+
+  return null;
+}
+
+function createEmptyRoute(reason) {
+  return {
+    path: [],
+    distance: 0,
+    time: 0,
+    smoothPathCoords: [],
+    reason,
+  };
+}
+
 function calculateTimeHeuristic(fromCoords, toCoords) {
   const distance = calculateDistanceHeuristic(fromCoords, toCoords);
   return distance / kmhToMs(MAX_POSSIBLE_SPEED);
@@ -271,7 +328,16 @@ function astar(
     }
   }
 
-  return null;
+  const reason = profile === "hgv"
+    ? (() => {
+        const maxCapacity = findMaxCapacityPath(graph, startNodeId, goalNodeId);
+        if (maxCapacity === null) return "Trasa nebola nájdená";
+        if (maxCapacity === Infinity) return `Trasu sa nepodarilo nájsť pre ${vehicleWeight} t; maximálna možná kapacita je neobmedzená`;
+        return `Trasu sa nepodarilo nájsť pre ${vehicleWeight} t; maximálna možná kapacita je ${maxCapacity.toFixed(1)} t`;
+      })()
+    : "Trasa nebola nájdená";
+
+  return createEmptyRoute(reason);
 }
 
 // ============================================================================

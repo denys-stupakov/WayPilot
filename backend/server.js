@@ -76,7 +76,7 @@ app.get("/route-stream", async (req, res) => {
       // send an error event to client
       res.write(`event: error\ndata: ${JSON.stringify({
         type: "invalid_stop",
-        message: "Stop too far from known roads",
+        message: "Zastávka je príliš ďaleko od známych ciest",
         index: i
       })}\n\n`);
 
