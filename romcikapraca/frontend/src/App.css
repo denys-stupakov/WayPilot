@@ -1,0 +1,106 @@
+/* STEP CARDS (override)*/
+
+.step-card.current {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(90, 200, 200, 0.12), 0 4px 16px rgba(0,0,0,0.2);
+}
+
+/*DERIVATIVE BOXES  */
+
+.formula-box {
+  margin: 10px 0;
+  padding: 12px 14px;
+  background: var(--color-bg);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.formula-step { margin: 6px 0; padding-left: 14px; }
+.formula-highlight { color: var(--color-warning); font-weight: 600; }
+
+.derivative-display {
+  margin: 10px 0;
+  padding: 10px 12px;
+  background: var(--color-elevated);
+  border-radius: 6px;
+  border: 1px solid var(--color-border-subtle);
+}
+
+.derivative-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-text-faint); margin-bottom: 5px; }
+.derivative-formula { font-family: var(--font-mono); font-size: 14px; color: var(--color-text); }
+
+/* RESULTS BOX*/
+
+.results-mode-display { padding: 10px 12px; background: var(--color-elevated); border-radius: 7px; margin-bottom: 12px; }
+.results-mode-label { font-size: 13px; line-height: 1.7; color: var(--color-text-dim); }
+.results-mode-value { font-weight: 600; color: var(--color-text); margin-top: 3px; font-family: var(--font-mono); font-size: 14px; }
+
+.results-root-box {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(90,200,200,0.07), rgba(90,200,200,0.03));
+  border: 1px solid rgba(90,200,200,0.3);
+  border-radius: 9px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.results-root { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-text-faint); margin-bottom: 5px; }
+.results-iterations-label { font-size: 11px; color: var(--color-text-faint); margin-bottom: 3px; letter-spacing: 0.05em; text-transform: uppercase; }
+.results-iterations { font-family: var(--font-mono); font-size: 28px; font-weight: 600; color: var(--color-text); }
+
+.results-table-container { margin-top: 12px; overflow-x: auto; }
+
+.results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.results-table th,
+.results-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--color-border-subtle); }
+.results-table th { background: var(--color-elevated); font-weight: 600; color: var(--color-text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; }
+.results-table tr:hover { background: rgba(90,200,200,0.04); }
+
+/*NEWTON INFO BOX */
+
+.newton-info-box {
+  margin-top: 10px;
+  padding: 11px 14px;
+  background-color: var(--color-bg);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text-dim);
+  border-left: 3px solid var(--color-border);
+  line-height: 1.7;
+}
+
+.newton-info-title { color: var(--color-text-dim); font-weight: 600; margin-bottom: 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* RESULT BADGE */
+
+.convergence-result {
+  margin-top: 10px;
+  padding: 9px 12px;
+  background: var(--color-elevated);
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/*PLOT LEGEND*/
+
+.plot-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: rgba(36,36,38,0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  max-width: 280px;
+  z-index: 1000;
+  color: var(--color-text);
+}
+
+.plot-legend-title { font-weight: 600; margin-bottom: 7px; color: var(--color-text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; }
+.plot-legend-item { line-height: 1.9; color: var(--color-text-dim); font-size: 13px; }
