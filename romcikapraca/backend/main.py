@@ -1,5 +1,5 @@
 from flask import Flask, send_from_directory
-from backend.routes.plot import plot_blueprint
+from routes.plot import plot_blueprint
 import os
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

@@ -2,17 +2,17 @@ import numpy as np
 from flask import Blueprint, request, jsonify
 from sympy import symbols
 
-from backend.utils.parser import parse_any
-from backend.utils.evaluator import safe_eval
-from backend.utils.splitter import split_equation
-from backend.utils.solver import find_intersections
-from backend.utils.plot_range import get_smart_display_range, HARD_MIN, HARD_MAX
-from backend.utils.intervals import (
+from utils.parser import parse_any
+from utils.evaluator import safe_eval
+from utils.splitter import split_equation
+from utils.solver import find_intersections
+from utils.plot_range import get_smart_display_range, HARD_MIN, HARD_MAX
+from utils.intervals import (
     find_valid_intervals_smart,
     validate_intervals,
     check_convergence_conditions,
 )
-from backend.utils.newton import newton_method_epsilon, newton_method_iterations
+from utils.newton import newton_method_epsilon, newton_method_iterations
 
 plot_blueprint = Blueprint("plot", __name__)
 

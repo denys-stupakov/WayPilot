@@ -174,7 +174,7 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
     const n = intervals.filter(i=> i.l1 !== "" || i.l2 !== "").length || 1;
 
     try{
-      const res= await fetch("http://147.232.204.240:8000/suggest_intervals",{
+      const res= await fetch("/suggest_intervals",{
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ expr: getExpr(), intersections: savedIntersections, num_intervals: n }),
       });
@@ -229,7 +229,7 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
     const n= intervals.filter(i=> i.l1 !== "" || i.l2 !== "").length || 1;
 
     try{
-      const res= await fetch("http://147.232.204.240:8000/suggest_intervals", {
+      const res= await fetch("/suggest_intervals", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ expr: getExpr(), intersections: savedIntersections, num_intervals: n }),
       });
