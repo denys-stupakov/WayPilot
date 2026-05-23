@@ -2,6 +2,7 @@ import warnings
 import numpy as np
 from sympy import diff, lambdify, latex as sympy_latex
 
+
 def _scan_sign_changes(f, x_min=-15, x_max=15, n_points=2000):
     xs = np.linspace(x_min, x_max, n_points)
     with warnings.catch_warnings():
@@ -17,21 +18,21 @@ def _scan_sign_changes(f, x_min=-15, x_max=15, n_points=2000):
             changes.append((float(xs[i]), float(xs[i + 1])))
     return changes
 
+
 def _safe_eval(f, xi):
     try:
         return float(f(xi))
     except Exception:
         return float("nan")
 
+
 def find_valid_intervals_smart(f_expr, x, intersections, num_intervals=1):
-    #*nefunčne*
     f = lambdify(x, f_expr, "numpy")
     valid_intervals = []
 
     def _no_overlap(a, b):
         return not any(not (b < ex[0] or a > ex[1]) for ex in valid_intervals)
 
-    #trysmart
     if intersections:
         sorted_intersections = sorted(intersections, key=lambda p: p[0])
         for point in sorted_intersections[:num_intervals * 4]:
@@ -42,7 +43,7 @@ def find_valid_intervals_smart(f_expr, x, intersections, num_intervals=1):
                 a, b = x_root - window_size, x_root + window_size
                 try:
                     f_a, f_b = float(f(a)), float(f(b))
-                    if np.isfinite(f_a) and np.isfinite(f_b) and f_a*f_b < 0 and _no_overlap(a, b):
+                    if np.isfinite(f_a) and np.isfinite(f_b) and f_a * f_b < 0 and _no_overlap(a, b):
                         valid_intervals.append([round(a, 2), round(b, 2)])
                         break
                 except Exception:
@@ -51,7 +52,6 @@ def find_valid_intervals_smart(f_expr, x, intersections, num_intervals=1):
     if len(valid_intervals) >= num_intervals:
         return valid_intervals
 
-    #broad scan
     sign_changes = _scan_sign_changes(f)
     for (a, b) in sign_changes:
         if len(valid_intervals) >= num_intervals:
@@ -65,25 +65,115 @@ def find_valid_intervals_smart(f_expr, x, intersections, num_intervals=1):
 def validate_intervals(f_expr, x, intervals):
     try:
         f = lambdify(x, f_expr, "numpy")
+        expr_str = str(f_expr).lower()
+
+        has_log  = "log" in expr_str
+        has_sqrt = "sqrt" in expr_str
+        has_div  = ("1/x" in expr_str or "x**(-1)" in expr_str
+                    or ("/" in expr_str and "x" in expr_str))
+
         results = []
         for interval in intervals:
-            a, b = interval
+            a, b = float(interval[0]), float(interval[1])
+
+            # Проверка допустимости границ
+            domain_error = None
+
+            if has_log:
+                if a <= 0:
+                    domain_error = (
+                        f"Logaritmus nie je definovaný pre x ≤ 0. "
+                        f"Hodnota a = {a} nie je platná. Použite a > 0."
+                    )
+                elif b <= 0:
+                    domain_error = (
+                        f"Logaritmus nie je definovaný pre x ≤ 0. "
+                        f"Hodnota b = {b} nie je platná. Použite b > 0."
+                    )
+
+            if not domain_error and has_sqrt:
+                if a < 0:
+                    domain_error = (
+                        f"Odmocnina nie je definovaná pre x < 0. "
+                        f"Hodnota a = {a} nie je platná. Použite a ≥ 0."
+                    )
+                elif b < 0:
+                    domain_error = (
+                        f"Odmocnina nie je definovaná pre x < 0. "
+                        f"Hodnota b = {b} nie je platná. Použite b ≥ 0."
+                    )
+
+            if not domain_error and has_div:
+                if abs(a) < 1e-10:
+                    domain_error = (
+                        f"Funkcia nie je definovaná v x = 0 (delenie nulou). "
+                        f"Hodnota a = {a} nie je platná."
+                    )
+                elif abs(b) < 1e-10:
+                    domain_error = (
+                        f"Funkcia nie je definovaná v x = 0 (delenie nulou). "
+                        f"Hodnota b = {b} nie je platná."
+                    )
+
+            if domain_error:
+                results.append({
+                    "interval": interval,
+                    "f_a": None, "f_b": None,
+                    "valid": False,
+                    "domain_error": domain_error,
+                })
+                continue
+
+            # Обычная проверка
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    f_a, f_b = float(f(a)), float(f(b))
-                if not (np.isfinite(f_a) and np.isfinite(f_b)):
-                    results.append({"interval": interval, "f_a": 0, "f_b": 0, "valid": False})
-                else:
+                    f_a = float(f(a))
+                    f_b = float(f(b))
+
+                if not np.isfinite(f_a):
                     results.append({
-                        "interval": interval, "f_a": f_a, "f_b": f_b,
-                        "valid": (f_a * f_b) < 0
+                        "interval": interval, "f_a": None, "f_b": None,
+                        "valid": False,
+                        "domain_error": (
+                            f"f(a) = f({a}) nie je definované "
+                            f"(funkcia vrátila nekonečno alebo NaN). "
+                            f"Skúste iný interval."
+                        ),
                     })
-            except Exception:
-                results.append({"interval": interval, "f_a": 0, "f_b": 0, "valid": False})
+                    continue
+
+                if not np.isfinite(f_b):
+                    results.append({
+                        "interval": interval, "f_a": None, "f_b": None,
+                        "valid": False,
+                        "domain_error": (
+                            f"f(b) = f({b}) nie je definované "
+                            f"(funkcia vrátila nekonečno alebo NaN). "
+                            f"Skúste iný interval."
+                        ),
+                    })
+                    continue
+
+                results.append({
+                    "interval": interval,
+                    "f_a": f_a, "f_b": f_b,
+                    "valid": (f_a * f_b) < 0,
+                    "domain_error": None,
+                })
+
+            except Exception as ex:
+                results.append({
+                    "interval": interval, "f_a": None, "f_b": None,
+                    "valid": False,
+                    "domain_error": f"Chyba pri výpočte: {str(ex)}",
+                })
+
         return {"validIntervals": results, "function": str(f_expr)}
+
     except Exception as e:
         return {"error": f"Chyba pri overovaní intervalov: {str(e)}"}
+
 
 def check_convergence_conditions(f_expr, x, intervals):
     try:
@@ -101,11 +191,11 @@ def check_convergence_conditions(f_expr, x, intervals):
 
             try:
                 with np.errstate(all="ignore"):
-                    df_arr = np.array(df(test_points), dtype=float)
+                    df_arr  = np.array(df(test_points),  dtype=float)
                     d2f_arr = np.array(d2f(test_points), dtype=float)
 
                 valid_mask = np.isfinite(df_arr) & np.isfinite(d2f_arr)
-                df_values = df_arr[valid_mask].tolist()
+                df_values  = df_arr[valid_mask].tolist()
                 d2f_values = d2f_arr[valid_mask].tolist()
 
             except Exception:
@@ -122,15 +212,17 @@ def check_convergence_conditions(f_expr, x, intervals):
                 })
                 continue
 
-            df_keeps_sign = all(v > 1e-10 for v in df_values) or all(v < -1e-10 for v in df_values)
-            d2f_keeps_sign = all(v > 0 for v in d2f_values) or all(v < 0 for v in d2f_values)
+            df_keeps_sign  = (all(v >  1e-10 for v in df_values)
+                              or all(v < -1e-10 for v in df_values))
+            d2f_keeps_sign = (all(v > 0 for v in d2f_values)
+                              or all(v < 0 for v in d2f_values))
 
             try:
-                f_x0 = float(f(x0))
-                df_x0 = float(df(x0))
+                f_x0   = float(f(x0))
+                df_x0  = float(df(x0))
                 d2f_x0 = float(d2f(x0))
             except Exception:
-                f_x0 = df_x0 =d2f_x0 = 0
+                f_x0 = df_x0 = d2f_x0 = 0
 
             product_positive = (f_x0 * d2f_x0) > 1e-10
             converges = df_keeps_sign and d2f_keeps_sign

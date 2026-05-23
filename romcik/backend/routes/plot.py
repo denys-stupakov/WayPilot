@@ -122,7 +122,7 @@ def plot():
 
         xmin, xmax, ymin_hint, ymax_hint = get_smart_display_range(f_expr, g, x)
 
-        xs = np.linspace(xmin, xmax, 3000)
+        xs = np.linspace(xmin, xmax, 15000)
         xs = xs[np.isfinite(xs)]
 
         try:
@@ -182,7 +182,7 @@ def plot():
 
             #g,h na povodnu funkc 3 krok
             if data.get("single_mode", False):
-                xs_single = np.linspace(xmin, xmax, 3000)
+                xs_single = np.linspace(xmin, xmax, 15000)  # ← убери custom_xmin логику, просто 15000
                 xs_single = xs_single[np.isfinite(xs_single)]
                 x1s, y1s = safe_eval(f_expr, x, xs_single)
                 response.update({
@@ -201,7 +201,6 @@ def plot():
 
 @plot_blueprint.route("/plot_single", methods=["POST"])
 def plot_single():
-    #povodna funkc
     try:
         data = request.json
         expr_text = data.get("expr", "")
@@ -209,10 +208,9 @@ def plot_single():
         x = symbols("x")
 
         f_expr = _parse_expr(expr_text)
-
         xmin, xmax, ymin_hint, ymax_hint = get_smart_display_range(f_expr, f_expr, x)
 
-        xs = np.linspace(xmin, xmax, 3000)
+        xs = np.linspace(xmin, xmax, 15000)  # ← 15000 точек
         xs = xs[np.isfinite(xs)]
 
         try:

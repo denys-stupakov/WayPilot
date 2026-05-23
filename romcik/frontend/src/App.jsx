@@ -7,6 +7,7 @@ export default function App(){
   const [calculationMode, setCalculationMode] = useState(null);
   const [modeValue, setModeValue] = useState(null);
   const [highlightIntervals, setHighlightIntervals] = useState([]);
+  const [newtonRevealIndex, setNewtonRevealIndex] = useState(-1);
 
   const handleModeChange = (mode, value)=>{
     setCalculationMode(mode);
@@ -21,10 +22,13 @@ export default function App(){
           onPlot={setData}
           onModeChange={handleModeChange}
           onHighlightChange={setHighlightIntervals}
+          onNewtonReveal={setNewtonRevealIndex}
         />
       </div>
       <div style={{ flex: 1, position: "relative", height: "100vh", overflow: "hidden" }}>
-        <PlotArea data={data} highlightIntervals={highlightIntervals} />
+        <PlotArea data={data}
+                  highlightIntervals={highlightIntervals}
+                  newtonRevealIndex={newtonRevealIndex}/>
       </div>
     </div>
   );

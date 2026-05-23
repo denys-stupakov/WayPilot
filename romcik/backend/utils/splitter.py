@@ -16,14 +16,10 @@ def classify_term(term, x):
             return "radical"
         poly = Poly(term, x)
         deg = poly.degree()
-        if deg == 1:
-            return "linear"
-        elif deg == 2:
-            return "quadratic"
-        elif deg > 2:
-            return "polynomial"
-        else:
-            return "constant"
+        if deg == 1: return "linear"
+        elif deg == 2: return "quadratic"
+        elif deg > 2: return "polynomial"
+        else: return "constant"
     except Exception:
         return "unknown"
 

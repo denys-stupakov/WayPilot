@@ -4,13 +4,13 @@
   --color-bg: #18181a;
   --color-panel: #202022;
   --color-card: #272729;
-  --color-elevated: #2e2e30;
+  --color-elevated: #39393a;
   --color-border: #000000;
   --color-border-subtle: #000000;
 
   /*Monochromatic text*/
   --color-text: #dcdce0;
-  --color-text-dim: #615f5f;
+  --color-text-dim: #e3dbdb;
   --color-text-faint: #d8d8d8;
 
   /* steel blue */
@@ -63,7 +63,7 @@ html, body{
 
 body{
   font-family: var(--font-ui);
-  font-size: 15px;
+  font-size: 20px;
   line-height: 1.65;
   background-color: var(--color-bg);
   color: var(--color-text);
@@ -129,10 +129,11 @@ body{
 .step-title {
   font-family: var(--font-ui);
   font-weight: 600;
-  font-size: 11px;
+  font-size: 16px !important;
   letter-spacing: 0.07em;
   text-transform:none; /*ddd*/
-  margin-bottom: 14px;
+  margin-bottom: 14px ;
+  padding-top: 11px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-faint);
@@ -339,7 +340,7 @@ math-field:focus-within {
   color: var(--color-button-text);
   font-family: var(--font-ui);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.03em;
   border-radius: 7px;
   cursor: pointer;
@@ -474,7 +475,7 @@ math-field:focus-within {
   border: 1px solid var(--color-border-subtle);
 }
 
-.validation-title { font-weight: 600; font-size: 11px; text-transform: none; letter-spacing: 0.07em; margin-bottom: 10px; color: var(--color-text-faint); }
+.validation-title { font-weight: 600; font-size: 14px; text-transform: none; letter-spacing: 0.07em; margin-bottom: 10px; color: var(--color-text-faint); }
 
 .validation-item { padding: 10px 12px; margin-bottom: 7px; border-radius: 6px; border-left: 3px solid; }
 .validation-item.valid { background-color: var(--color-success-bg); border-left-color: var(--color-success); }
@@ -622,3 +623,59 @@ math-field:focus-within {
   .app-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .side-panel { height: auto; max-height: 50vh; }
 }
+
+.step-title { font-size: 13px; }
+
+.mode-button-title { font-size: 15px; }
+.mode-button-subtitle { font-size: 14px; }
+.mode-config-label { font-size: 13px; }
+.mode-hint { font-size: 13px; }
+.quick-button { font-size: 13px; }
+
+.input-label { font-size: 15px; }
+.input-field { font-size: 15px; }
+
+.math-button { font-size: 14px; }
+
+.btn-primary { font-size: 15px; }
+
+.explanation-title { font-size: 15px; }
+.explanation-content { font-size: 15px; }
+
+.validation-title { font-size: 15px; }
+.validation-item { font-size: 14px; }
+
+.convergence-title { font-size: 13px; }
+.convergence-check { font-size: 14px; }
+
+.newton-table-title { font-size: 16px; }
+.newton-table th { font-size: 13px; }
+.newton-table td { font-size: 14px; }
+
+.newton-result-root { font-size: 16px; }
+.newton-result-value { font-size: 22px; }
+.newton-result-iterations-label { font-size: 16px; }
+.newton-result-iterations-value { font-size: 26px; }
+
+.interval-input { font-size: 14px; }
+
+.sign-btn { font-size: 17px; }
+
+.plot-legend-title { font-size: 13px; }
+.plot-legend-item { font-size: 14px; }
+
+.derivative-label { font-size: 13px; }
+.derivative-formula { font-size: 15px; }
+
+.results-mode-label { font-size: 14px; }
+.results-mode-value { font-size: 15px; }
+.results-root { font-size: 13px; }
+.results-iterations { font-size: 30px; }
+.results-iterations-label { font-size: 13px; }
+.results-table th { font-size: 13px; }
+.results-table td { font-size: 13px; }
+
+.newton-info-title { font-size: 13px; }
+.newton-info-box { font-size: 14px; }
+
+.convergence-result { font-size: 14px; }
