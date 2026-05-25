@@ -19,11 +19,9 @@ function buildNewtonStep(step, iterIndex, totalSteps){
   if(xn == null || fx == null) return [];
 
   const fy = fx;
-
   const isFirst = iterIndex === 0;
   const color = isFirst ? '#00bcd4' : stepColor(iterIndex, totalSteps, 1);
   const size  = isFirst ? 15 : 13;
-
   const traces = [];
 
   if(dfx != null && isFinite(dfx) && Math.abs(dfx) > 1e-10){
@@ -50,31 +48,28 @@ function buildNewtonStep(step, iterIndex, totalSteps){
       hoverinfo: 'skip',
       legendgroup: `newton_step_${iterIndex}`,
     });
+
+    // Точка на оси x — где касательная пересекает ось (xnext, 0)
+    traces.push({
+      x: [xnext], y: [0],
+      mode: 'markers+text',
+      marker: { color, size: size - 2, symbol: 'circle', line: { color: '#111', width: 1.5 } },
+      text: [`x<sub>${step.iter + 1}</sub>`],
+      textposition: 'bottom center',
+      textfont: { color, size: 11, family: 'Arial Black, Arial' },
+      showlegend: false,
+      hoverinfo: 'skip',
+      legendgroup: `newton_step_${iterIndex}`,
+    });
   }
 
-  // Точка на кривой f(x)
+  // Точка на кривой f(x) — без подписи
   traces.push({
     x: [xn], y: [fy],
-    mode: 'markers+text',
+    mode: 'markers',
     marker: { color, size, symbol: 'circle', line: { color: '#111', width: 2 } },
-    text: [`x<sub>${step.iter}</sub>`],
-    textposition: 'top right',
-    textfont: { color, size: 12, family: 'Arial Black, Arial' },
     showlegend: false,
     hovertemplate: `<b>x<sub>${step.iter}</sub> = ${xn.toFixed(6)}</b><br>f(x<sub>${step.iter}</sub>) = ${fy.toFixed(6)}<extra></extra>`,
-    legendgroup: `newton_step_${iterIndex}`,
-  });
-
-  // Точка на оси x под xn
-  traces.push({
-    x: [xn], y: [0],
-    mode: 'markers+text',
-    marker: { color, size: size - 2, symbol: 'circle', line: { color: '#111', width: 1.5 } },
-    text: [`x<sub>${step.iter}</sub>`],
-    textposition: 'bottom center',
-    textfont: { color, size: 11, family: 'Arial Black, Arial' },
-    showlegend: false,
-    hoverinfo: 'skip',
     legendgroup: `newton_step_${iterIndex}`,
   });
 
@@ -370,33 +365,70 @@ export default function PlotArea({data, highlightIntervals, newtonRevealIndex}){
   },[highlightIntervals, data]);
 
   // Newton points + tangents
-  useEffect(()=>{
-    const el = ref.current;
-    if(!el || !el.data || !data?.newton?.steps) return;
-    const steps = data.newton.steps;
-    if(!steps || steps.length === 0) return;
-    if(newtonRevealIndex == null || newtonRevealIndex < 0) return;
+// Newton points + tangents
+useEffect(()=>{
+  const el = ref.current;
+  if(!el || !el.data || !data?.newton?.steps) return;
+  const steps = data.newton.steps;
+  if(!steps || steps.length === 0) return;
+  if(newtonRevealIndex == null || newtonRevealIndex < 0) return;
 
-    const baseTraces = el.data.filter(t =>
-      !(t.legendgroup && t.legendgroup.startsWith('newton_step_'))
-    );
+  const baseTraces = el.data.filter(t =>
+    !(t.legendgroup && t.legendgroup.startsWith('newton_step_'))
+  );
 
-    const newTraces = [...baseTraces];
+  const newTraces = [...baseTraces];
+  const stepsToShow = Math.min(newtonRevealIndex, steps.length);
 
-    // Рисуем все шаги до newtonRevealIndex включительно
-    const stepsToShow = Math.min(newtonRevealIndex, steps.length);
+  for(let i = 0; i < stepsToShow; i++){
+    const stepTraces = buildNewtonStep(steps[i], i, steps.length - 1);
+    stepTraces.forEach(t => newTraces.push(t));
+  }
 
-    for(let i = 0; i < stepsToShow; i++){
-      const stepTraces = buildNewtonStep(steps[i], i, steps.length - 1);
-      stepTraces.forEach(t => newTraces.push(t));
-    }
+  Plotly.react(el, newTraces, el.layout, {
+    responsive: true, scrollZoom: true,
+    displaylogo: false, displayModeBar: true,
+    modeBarButtonsToRemove: ["lasso2d", "select2d"],
+  });
 
-    Plotly.react(el, newTraces, el.layout, {
-      responsive: true, scrollZoom: true,
-      displaylogo: false, displayModeBar: true,
-      modeBarButtonsToRemove: ["lasso2d", "select2d"],
+  // Зум только на финальном шаге (все итерации раскрыты)
+  const isFinal = newtonRevealIndex >= steps.length;
+  if(!isFinal) return;
+  if(userRangesRef.current) return;
+
+  // Собираем все xn и xn_next всех итераций
+  const allXs = [];
+  const allYs = [];
+  for(const s of steps){
+    if(s.xn != null)     { allXs.push(s.xn);      allYs.push(s.fx ?? 0); }
+    if(s.xn_next != null){ allXs.push(s.xn_next); allYs.push(0); }
+  }
+  if(allXs.length === 0) return;
+
+  const xLo = Math.min(...allXs);
+  const xHi = Math.max(...allXs);
+  const yLo = Math.min(...allYs);
+  const yHi = Math.max(...allYs);
+
+  const xSpan = Math.max(xHi - xLo, 0.5);
+  const ySpan = Math.max(Math.abs(yHi - yLo), 0.5);
+
+  setTimeout(()=>{
+    if(!ref.current) return;
+    Plotly.relayout(ref.current, {
+      "xaxis.range": [
+        clamp(xLo - xSpan * 0.25, HARD_MIN, HARD_MAX),
+        clamp(xHi + xSpan * 0.25, HARD_MIN, HARD_MAX)
+      ],
+      "xaxis.autorange": false,
+      "yaxis.range": [
+        clamp(yLo - ySpan * 0.35, HARD_MIN, HARD_MAX),
+        clamp(yHi + ySpan * 0.35, HARD_MIN, HARD_MAX)
+      ],
+      "yaxis.autorange": false,
     });
-  }, [newtonRevealIndex, data, highlightIntervals]);
+  }, 50);
+}, [newtonRevealIndex, data, highlightIntervals]);
 
   const hasIntervals= highlightIntervals && highlightIntervals.length > 0;
 

@@ -83,7 +83,7 @@ export default function Step4StartPoint({
     {
       n: "1",
       title: "Nájdi bod m na grafe",
-      text: "Bod m je minimum f′(x), na grafe viditeľný ako miesto, kde je krivka najbližšie k nule. Dotyčnica je tam takmer rovnobežná s osou x, preto metóda odskočí ďaleko od koreňa.",
+      text: "Nájdi bod m na grafe: Bod m je minimum f′(x), na grafe viditeľný ako miesto, kde je krivka najbližšie k nule. Dotyčnica je tam takmer rovnobežná s osou x, preto metóda odskočí ďaleko od koreňa.",
     },
     {
       n: "2",
@@ -132,7 +132,7 @@ export default function Step4StartPoint({
             fontSize: '13px', fontWeight: 'bold', textAlign: 'left',
           }}
         >
-          <span style={{ color: 'var(--color-text)' }}>Ako vybrať správny štartovací bod?</span>
+          <span style={{ color: 'var(--color-text)', fontSize: '15px'}}>Ako vybrať správny štartovací bod?</span>
           <span style={{
             fontSize: '13px', color: 'rgba(220,220,224,0.7)',
             padding: '2px 8px', borderRadius: '4px',
@@ -161,7 +161,7 @@ export default function Step4StartPoint({
                   }}>{n}</div>
                   <div>
                     <span style={{ fontWeight: 'bold', color: 'var(--color-text)' }}>{title}: </span>
-                    <span style={{ color: 'rgba(220,220,224,0.7)' }}>{text}</span>
+                    <span style={{ color: 'var(--color-text)' }}>{text}</span>
                   </div>
                 </div>
               ))}
@@ -172,7 +172,7 @@ export default function Step4StartPoint({
 
       {/* Input field */}
       <div className="mb-12">
-        <label className="input-label">Počiatočný bod x{"\u2080"}:</label>
+        <label className="input-label">Štartovací bod x{"\u2080"}:</label>
         <input
           type="text"
           inputMode="decimal"
@@ -189,12 +189,13 @@ export default function Step4StartPoint({
           }}
         />
 
+        {/* ERRORS*/}
         {inputError && (
           <div style={{
             marginTop: '6px', padding: '7px 12px',
             background: 'rgba(255,82,82,0.07)',
             border: '1px solid var(--color-danger)',
-            borderRadius: '6px', fontSize: '12px',
+            borderRadius: '6px', fontSize: '15px',
             color: 'var(--color-danger)', lineHeight: '1.5',
           }}>
             {"\u2717"} {inputError}
@@ -202,13 +203,13 @@ export default function Step4StartPoint({
         )}
       </div>
 
-      {/* Live interval check */}
+      {/*CHECK INTERVALS */}
       {x0Valid && !verified && a != null && b != null && !inputError && (
         <div style={{
           marginBottom: '10px', padding: '7px 12px',
           background: x0InInterval ? 'rgba(0,230,118,0.07)' : 'rgba(255,82,82,0.07)',
           border: `1px solid ${x0InInterval ? 'var(--color-success)' : 'var(--color-danger)'}`,
-          borderRadius: '6px', fontSize: '13px', textAlign: 'center',
+          borderRadius: '6px', fontSize: '15px', textAlign: 'center',
           color: x0InInterval ? 'var(--color-success)' : 'var(--color-danger)',
         }}>
           {x0InInterval
@@ -224,7 +225,7 @@ export default function Step4StartPoint({
           className="btn-primary btn-warning"
           disabled={x0Input === "" || !!inputError || !x0Valid}
         >
-          Overiť x{"\u2080"}
+          Overiť
         </button>
       )}
 
@@ -237,7 +238,7 @@ export default function Step4StartPoint({
             className="btn-primary btn-warning"
             style={{ width: '100%' }}
           >
-            Zmeniť x{"\u2080"} {"\u2190"}
+            Zmeniť
           </button>
         </>
       )}
@@ -299,16 +300,16 @@ export default function Step4StartPoint({
               borderRadius: '6px', fontSize: '13px',
               color: 'var(--color-warning)', lineHeight: '1.5',
             }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '15px'}}>
                 Odporúčame použiť {recommendedLabel} = {fmt(recommendedVal)}
               </div>
-              <div style={{ fontSize: '13px', color: 'rgba(220,220,224,0.7)', marginBottom: '8px' }}>
+              <div style={{ fontSize: '15px', color: 'var(--color-axis)', marginBottom: '8px' }}>
                 Konvergencia je spoľahlivejšia z krajného bodu ďalej od m.
               </div>
               <button
                 onClick={applyRecommended}
                 className="btn-primary btn-warning"
-                style={{ width: '100%', fontSize: '12px', padding: '6px 12px' }}
+                style={{ width: '100%', fontSize: '15px', padding: '6px 12px' }}
               >
                 Použiť x₀ = {fmt(recommendedVal)} namiesto {fmt(parseFloat(x0Input))}
               </button>

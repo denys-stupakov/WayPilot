@@ -131,18 +131,18 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
   const handleStep2ValidateManual = async (setManualResults)=>{
     const validIntervals = getValidIntervals();
     if(validIntervals.length === 0){
-      alert("Prosím, zadajte aspoň jeden interval.");
+      alert("Prosím, zadajte interval.");
       return;
     }
     await apiCall("/validate_intervals",{expr: getExpr(), intervals: validIntervals},(responseData)=>{
       setManualResults(responseData);
-    }, "Chyba pri validácii intervalov");
+    }, "Chyba pri validácii intervala");
   };
 
   const handleStep2Validate = async ()=>{
     const validIntervals = getValidIntervals();
     if(validIntervals.length === 0){
-      alert("Prosím, zadajte aspoň jeden interval.");
+      alert("Prosím, zadajte interval.");
       return;
     }
     await apiCall("/validate_intervals",{expr: getExpr(), intervals: validIntervals},(responseData)=>{
@@ -157,13 +157,13 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
         setAttemptCount(next);
         if(next >= 3){
           const n= intervals.filter(i=> i.l1 !== "" || i.l2 !== "").length || 1;
-          alert(`Vyčerpali ste 3 pokusy. Automaticky sa načíta ${n} správny interval.`);
+          alert(`Vyčerpali ste 3 pokusy. Automaticky sa načíta správny interval ${n}.`);
           autoFillCorrectIntervals();
         }else{
-          alert(`Pokus ${next}/3: Žiadny interval nie je platný. Skúste iné intervaly.`);
+          alert(`Pokus ${next}/3: Interval nie je platný. Skúste iný interval.`);
         }
       }
-    }, "Chyba pri validácii intervalov");
+    }, "Chyba pri validácii intervala");
   };
 
   const autoFillCorrectIntervals = async ()=>{
@@ -475,7 +475,7 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
 
       {step3Completed && (
         <div className={getStepClass(4)}>
-          <div className="step-title step-4">Startovací bod</div>
+          <div className="step-title step-4">Štartovací bod</div>
           <Step4StartPoint
             x0Input={x0Input}
             onX0Change={handleX0Change}

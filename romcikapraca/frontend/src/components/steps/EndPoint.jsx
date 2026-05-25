@@ -31,23 +31,31 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
   const wrongTimer   = useRef(null);
   const successTimer = useRef(null);
 
+  const isIterMode = calculationMode === 'iterations';
+
   useEffect(()=>{
     setUserGuesses({});
     setRowFeedback({});
     setAllRevealed(false);
     setSuccessMsg(false);
-    setActiveIndex(0);
+    // в режиме iterations строка n=0 (x0) дана сразу — активной становится строка n=1
+    setActiveIndex(isIterMode ? 1 : 0);
     setWrongFlash(null);
     consecutiveCorrect.current = 0;
     clearTimeout(wrongTimer.current);
     clearTimeout(successTimer.current);
     if(onRevealIndexChange) onRevealIndexChange(0);
-  },[data]);
+  },[data, calculationMode]);
 
   useEffect(()=>{
     if(onRevealIndexChange){
       const steps = data?.newton?.steps ?? [];
-      onRevealIndexChange(allRevealed ? steps.length : activeIndex);
+      if(isIterMode){
+        // индекс шага = activeIndex - 1 (строка n соответствует steps[n-1].xn_next)
+        onRevealIndexChange(allRevealed ? steps.length : Math.max(0, activeIndex - 1));
+      } else {
+        onRevealIndexChange(allRevealed ? steps.length : activeIndex);
+      }
     }
   }, [activeIndex, allRevealed]);
 
@@ -57,6 +65,14 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
   const epsilonNum    = parseFloat(epsilonValue) || 0.000001;
   const decimalPlaces = getDecimalPlaces(epsilonNum, calculationMode);
 
+  // ---- iterations: последовательность x0..xN ----
+  // строка n=0 -> steps[0].xn (x0, дано)
+  // строка n=k (k>=1) -> steps[k-1].xn_next (xk, угадывается)
+  const totalIterRows = steps.length + 1; // x0..xN
+  const getIterValue = (n) =>
+    n === 0 ? steps[0].xn : steps[n - 1].xn_next;
+
+  // ---- epsilon ----
   const getCorrectValue = (step) =>
     calculationMode === 'epsilon' ? step.epsilon_product : step.xn_next;
 
@@ -65,15 +81,14 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
     if(onRevealIndexChange) onRevealIndexChange(steps.length);
   };
 
-  const handleGuessCheck = (iterIndex) => {
-    if(wrongFlash === iterIndex) return; // заблокировано пока флаш
+  // ===== EPSILON режим — старая логика =====
+  const handleGuessCheckEpsilon = (iterIndex) => {
+    if(wrongFlash === iterIndex) return;
     const step      = steps[iterIndex];
     const userGuess = parseFloat(userGuesses[iterIndex] || "");
     if(isNaN(userGuess)) return;
     const correctValue = getCorrectValue(step);
-    const tolerance    = calculationMode === 'epsilon'
-      ? Math.abs(correctValue) * 0.05 + 1e-9
-      : Math.pow(10, -(decimalPlaces - 1));
+    const tolerance    = Math.abs(correctValue) * 0.05 + 1e-9;
     const isCorrect = Math.abs(userGuess - correctValue) <= tolerance;
     const next   = iterIndex + 1;
     const isLast = next >= steps.length;
@@ -83,7 +98,6 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
       setRowFeedback(prev => ({ ...prev, [iterIndex]: 'correct' }));
       setSuccessMsg(true);
 
-      // 2 правильных подряд — автозаполняем всё оставшееся
       if(consecutiveCorrect.current >= 2 && !isLast){
         clearTimeout(successTimer.current);
         successTimer.current = setTimeout(()=>{
@@ -123,7 +137,62 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
     }
   };
 
-  const visibleSteps = allRevealed ? steps : steps.slice(0, activeIndex + 1);
+  // ===== ITERATIONS режим — угадываем x_n (n>=1) =====
+  const handleGuessCheckIter = (n) => {
+    if(wrongFlash === n) return;
+    const userGuess = parseFloat(userGuesses[n] || "");
+    if(isNaN(userGuess)) return;
+    const correctValue = getIterValue(n);
+    const tolerance    = Math.pow(10, -(decimalPlaces - 1));
+    const isCorrect = Math.abs(userGuess - correctValue) <= tolerance;
+    const next   = n + 1;
+    const isLast = next >= totalIterRows; // следующей строки нет
+
+    if(isCorrect){
+      consecutiveCorrect.current += 1;
+      setRowFeedback(prev => ({ ...prev, [n]: 'correct' }));
+      setSuccessMsg(true);
+
+      if(consecutiveCorrect.current >= 2 && !isLast){
+        clearTimeout(successTimer.current);
+        successTimer.current = setTimeout(()=>{
+          setSuccessMsg(false);
+          autoFillAll();
+        }, 700);
+        return;
+      }
+
+      if(isLast){
+        autoFillAll();
+      } else {
+        clearTimeout(successTimer.current);
+        successTimer.current = setTimeout(()=>{
+          setActiveIndex(next);
+          setSuccessMsg(false);
+          if(onRevealIndexChange) onRevealIndexChange(next - 1);
+        }, 650);
+      }
+    } else {
+      consecutiveCorrect.current = 0;
+      setRowFeedback(prev => ({ ...prev, [n]: 'wrong' }));
+      setWrongFlash(n);
+      clearTimeout(wrongTimer.current);
+      wrongTimer.current = setTimeout(()=>{
+        setWrongFlash(null);
+        setUserGuesses(prev => ({ ...prev, [n]: String(correctValue) }));
+        if(isLast){
+          setTimeout(()=> autoFillAll(), 300);
+        } else {
+          setTimeout(()=>{
+            setActiveIndex(next);
+            if(onRevealIndexChange) onRevealIndexChange(next - 1);
+          }, 300);
+        }
+      }, 2000);
+    }
+  };
+
+  const handleGuessCheck = isIterMode ? handleGuessCheckIter : handleGuessCheckEpsilon;
 
   return(
     <div>
@@ -138,7 +207,7 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
           color: 'var(--color-success)', fontWeight: 'bold', fontSize: '14px',
         }}>
           {consecutiveCorrect.current >= 2
-            ? '🎉 Výborne! Automaticky dopĺňam zvyšok!'
+            ? 'Výborne! Automaticky dopĺňam zvyšok!'
             : 'Výborne! Správna odpoveď!'}
         </div>
       )}
@@ -151,116 +220,207 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
             <table className="newton-table">
               <thead>
                 <tr>
-                  <th style={{ fontFamily: '"Lora", Georgia, serif', textTransform: 'none', letterSpacing: 0, fontSize: '14px', fontStyle: 'italic' }}>n</th>
-                  <th style={{ fontFamily: '"Lora", Georgia, serif', textTransform: 'none', letterSpacing: 0, fontSize: '14px', fontStyle: 'italic' }}>x<sub style={{ fontSize: '10px' }}>n</sub></th>
-                  <th style={{ fontFamily: '"Lora", Georgia, serif', textTransform: 'none', fontStyle: 'italic', fontSize: '13px', letterSpacing: 0, whiteSpace: 'nowrap' }}>
-                    {calculationMode === 'epsilon'
-                      ? <>f(x<sub style={{ fontSize: '11px' }}>n</sub>&minus;ε)&thinsp;&middot;&thinsp;f(x<sub style={{ fontSize: '9px' }}>n</sub>+ε)</>
-                      : <>x<sub style={{ fontSize: '10px' }}>n+1</sub></>}
-                  </th>
+                  <th style={{ fontFamily: '"Lora", Georgia, serif', textTransform: 'none', letterSpacing: 0, fontSize: '15px', fontStyle: 'italic' }}>n</th>
+                  {isIterMode ? (
+                    <th style={{ fontFamily: '"Lora", Georgia, serif', textTransform: 'none', letterSpacing: 0, fontSize: '15px', fontStyle: 'italic' }}>x<sub style={{ fontSize: '10px' }}>n+1</sub></th>
+                  ) : (
+                    <>
+                      <th style={{ fontFamily: '"Lora", Georgia, serif', textTransform: 'none', letterSpacing: 0, fontSize: '15px', fontStyle: 'italic' }}>x<sub style={{ fontSize: '10px' }}>n</sub></th>
+                      <th style={{ fontFamily: '"Lora", Georgia, serif', textTransform: 'none', fontStyle: 'italic', fontSize: '15px', letterSpacing: 0, whiteSpace: 'nowrap' }}>
+                        f(x<sub style={{ fontSize: '11px' }}>n</sub>&minus;ε)&thinsp;&middot;&thinsp;f(x<sub style={{ fontSize: '9px' }}>n</sub>+ε)
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
+
               <tbody>
-                {visibleSteps.map((s, idx)=>{
-                  const isDone     = allRevealed || idx < activeIndex || !!rowFeedback[idx];
-                  const isActive   = !allRevealed && idx === activeIndex && !rowFeedback[idx];
-                  const isFlashing = wrongFlash === idx;
-                  const correctVal = getCorrectValue(s);
+                {isIterMode ? (
+                  /* ============ ITERATIONS: одна колонка x_n, n=0..N ============ */
+                  (allRevealed
+                    ? Array.from({ length: totalIterRows }, (_, n) => n)
+                    : Array.from({ length: activeIndex + 1 }, (_, n) => n)
+                  ).map((n)=>{
+                    const isGiven    = n === 0; // x0 дан сразу
+                    const isActive   = !allRevealed && n === activeIndex && !rowFeedback[n] && !isGiven;
+                    const isDone     = allRevealed || isGiven || n < activeIndex || !!rowFeedback[n];
+                    const isFlashing = wrongFlash === n;
+                    const correctVal = getIterValue(n);
+                    const isFinal    = (allRevealed && n === totalIterRows - 1);
 
-                  return(
-                    <tr
-                      key={s.iter}
-                      className={allRevealed && idx === steps.length - 1 ? 'final-row' : ''}
-                      style={{
-                        transition: 'background 0.25s',
-                        background: isFlashing
-                          ? 'rgba(220,50,50,0.20)'
-                          : rowFeedback[idx] === 'correct'
-                            ? 'rgba(90,184,122,0.07)'
-                            : 'transparent',
-                      }}
-                    >
-                      <td style={{ color: 'var(--color-text)' }}>{s.iter}</td>
-                      <td style={{ color: 'var(--color-text)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
-                        {formatXn(s.xn, decimalPlaces)}
-                      </td>
-                      <td style={{ color: 'var(--color-text)' }}>
-                        {isActive ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                              <input
-                                type="number"
-                                step="any"
-                                value={userGuesses[idx] || ''}
-                                onChange={(e)=>{
-                                  if(isFlashing) return;
-                                  setUserGuesses(prev => ({ ...prev, [idx]: e.target.value }));
-                                  if(rowFeedback[idx] === 'wrong')
-                                    setRowFeedback(prev => ({ ...prev, [idx]: null }));
-                                }}
-                                onKeyDown={(e)=> e.key === 'Enter' && handleGuessCheck(idx)}
-                                placeholder="?"
-                                autoFocus
-                                disabled={isFlashing}
-                                style={{
-                                  width: '110px', padding: '4px', textAlign: 'center',
-                                  background: isFlashing ? 'rgba(220,50,50,0.08)' : 'var(--color-bg)',
-                                  border: `1px solid ${isFlashing ? '#ff5252' : 'var(--color-border)'}`,
-                                  borderRadius: '4px', color: 'var(--color-text)', fontSize: '13px',
-                                  transition: 'border-color 0.25s',
-                                  opacity: isFlashing ? 0.7 : 1,
-                                }}
-                              />
-                              <button
-                                onClick={()=> handleGuessCheck(idx)}
-                                disabled={isFlashing}
-                                style={{
-                                  padding: '4px 8px',
-                                  background: isFlashing ? 'rgba(220,50,50,0.25)' : 'var(--color-button)',
-                                  border: 'none', borderRadius: '4px', color: 'white',
-                                  fontSize: '11px', cursor: isFlashing ? 'not-allowed' : 'pointer',
-                                  transition: 'background 0.25s',
-                                }}
-                              >✓</button>
-                            </div>
-
-                            {/* Красный флаш — неправильный ответ */}
-                            {isFlashing && (
-                              <div style={{
-                                fontSize: '11px', color: '#ff5252', fontWeight: 'bold',
-                                padding: '5px 10px',
-                                background: 'rgba(220,50,50,0.12)',
-                                border: '1px solid rgba(255,82,82,0.4)',
-                                borderRadius: '5px',
-                                textAlign: 'center',
-                              }}>
-                                ✗ Nesprávna! Správna: {formatCriterion(correctVal, calculationMode, decimalPlaces)}
+                    return(
+                      <tr
+                        key={`iter-${n}`}
+                        className={isFinal ? 'final-row' : ''}
+                        style={{
+                          transition: 'background 0.25s',
+                          background: isFlashing
+                            ? 'rgba(220,50,50,0.20)'
+                            : rowFeedback[n] === 'correct'
+                              ? 'rgba(90,184,122,0.07)'
+                              : 'transparent',
+                        }}
+                      >
+                        <td style={{ color: 'var(--color-text)' }}>{n}</td>
+                        <td style={{ color: 'var(--color-text)' }}>
+                          {isActive ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={userGuesses[n] || ''}
+                                  onChange={(e)=>{
+                                    if(isFlashing) return;
+                                    setUserGuesses(prev => ({ ...prev, [n]: e.target.value }));
+                                    if(rowFeedback[n] === 'wrong')
+                                      setRowFeedback(prev => ({ ...prev, [n]: null }));
+                                  }}
+                                  onKeyDown={(e)=> e.key === 'Enter' && handleGuessCheck(n)}
+                                  placeholder="?"
+                                  autoFocus
+                                  disabled={isFlashing}
+                                  style={{
+                                    width: '110px', padding: '4px', textAlign: 'center',
+                                    background: isFlashing ? 'rgba(220,50,50,0.08)' : 'var(--color-bg)',
+                                    border: `1px solid ${isFlashing ? '#ff5252' : 'var(--color-border)'}`,
+                                    borderRadius: '4px', color: 'var(--color-text)', fontSize: '13px',
+                                    transition: 'border-color 0.25s',
+                                    opacity: isFlashing ? 0.7 : 1,
+                                  }}
+                                />
+                                <button
+                                  onClick={()=> handleGuessCheck(n)}
+                                  disabled={isFlashing}
+                                  style={{
+                                    padding: '4px 8px',
+                                    background: isFlashing ? 'rgba(220,50,50,0.25)' : 'var(--color-button)',
+                                    border: 'none', borderRadius: '4px', color: 'white',
+                                    fontSize: '11px', cursor: isFlashing ? 'not-allowed' : 'pointer',
+                                    transition: 'background 0.25s',
+                                  }}
+                                >✓</button>
                               </div>
-                            )}
-                          </div>
-                        ) : isDone ? (
-                          <span style={{
-                            fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 400,
-                            color: rowFeedback[idx] === 'wrong' ? 'var(--color-warning)' : 'var(--color-text)',
-                          }}>
-                            {formatCriterion(correctVal, calculationMode, decimalPlaces)}
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--color-axis)', fontSize: '13px' }}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
 
-                {allRevealed && calculationMode === 'iterations' && steps.length > 0 && (
-                  <tr className="final-row">
-                    <td style={{ color: 'var(--color-text)' }}>{steps.length}</td>
-                    <td style={{ color: 'var(--color-text)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
-                      {formatXn(steps[steps.length - 1].xn_next, decimalPlaces)}
-                    </td>
-                    <td style={{ color: 'var(--color-text)', fontSize: '13px', fontStyle: 'italic' }}>—</td>
-                  </tr>
+                              {isFlashing && (
+                                <div style={{
+                                  fontSize: '11px', color: '#ff5252', fontWeight: 'bold',
+                                  padding: '5px 10px',
+                                  background: 'rgba(220,50,50,0.12)',
+                                  border: '1px solid rgba(255,82,82,0.4)',
+                                  borderRadius: '5px',
+                                  textAlign: 'center',
+                                }}>
+                                  ✗ Nesprávna! Správna: {formatXn(correctVal, decimalPlaces)}
+                                </div>
+                              )}
+                            </div>
+                          ) : isDone ? (
+                            <span style={{
+                              fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 400,
+                              color: rowFeedback[n] === 'wrong' ? 'var(--color-warning)' : 'var(--color-text)',
+                            }}>
+                              {formatXn(correctVal, decimalPlaces)}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--color-axis)', fontSize: '13px' }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  /* ============ EPSILON: две колонки x_n + критерий ============ */
+                  (allRevealed ? steps : steps.slice(0, activeIndex + 1)).map((s, idx)=>{
+                    const isDone     = allRevealed || idx < activeIndex || !!rowFeedback[idx];
+                    const isActive   = !allRevealed && idx === activeIndex && !rowFeedback[idx];
+                    const isFlashing = wrongFlash === idx;
+                    const correctVal = getCorrectValue(s);
+
+                    return(
+                      <tr
+                        key={s.iter}
+                        className={allRevealed && idx === steps.length - 1 ? 'final-row' : ''}
+                        style={{
+                          transition: 'background 0.25s',
+                          background: isFlashing
+                            ? 'rgba(220,50,50,0.20)'
+                            : rowFeedback[idx] === 'correct'
+                              ? 'rgba(90,184,122,0.07)'
+                              : 'transparent',
+                        }}
+                      >
+                        <td style={{ color: 'var(--color-text)' }}>{s.iter}</td>
+                        <td style={{ color: 'var(--color-text)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
+                          {formatXn(s.xn, decimalPlaces)}
+                        </td>
+                        <td style={{ color: 'var(--color-text)' }}>
+                          {isActive ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={userGuesses[idx] || ''}
+                                  onChange={(e)=>{
+                                    if(isFlashing) return;
+                                    setUserGuesses(prev => ({ ...prev, [idx]: e.target.value }));
+                                    if(rowFeedback[idx] === 'wrong')
+                                      setRowFeedback(prev => ({ ...prev, [idx]: null }));
+                                  }}
+                                  onKeyDown={(e)=> e.key === 'Enter' && handleGuessCheck(idx)}
+                                  placeholder="?"
+                                  autoFocus
+                                  disabled={isFlashing}
+                                  style={{
+                                    width: '110px', padding: '4px', textAlign: 'center',
+                                    background: isFlashing ? 'rgba(220,50,50,0.08)' : 'var(--color-bg)',
+                                    border: `1px solid ${isFlashing ? '#ff5252' : 'var(--color-border)'}`,
+                                    borderRadius: '4px', color: 'var(--color-text)', fontSize: '13px',
+                                    transition: 'border-color 0.25s',
+                                    opacity: isFlashing ? 0.7 : 1,
+                                  }}
+                                />
+                                <button
+                                  onClick={()=> handleGuessCheck(idx)}
+                                  disabled={isFlashing}
+                                  style={{
+                                    padding: '4px 8px',
+                                    background: isFlashing ? 'rgba(220,50,50,0.25)' : 'var(--color-button)',
+                                    border: 'none', borderRadius: '4px', color: 'white',
+                                    fontSize: '11px', cursor: isFlashing ? 'not-allowed' : 'pointer',
+                                    transition: 'background 0.25s',
+                                  }}
+                                >✓</button>
+                              </div>
+
+                              {isFlashing && (
+                                <div style={{
+                                  fontSize: '11px', color: '#ff5252', fontWeight: 'bold',
+                                  padding: '5px 10px',
+                                  background: 'rgba(220,50,50,0.12)',
+                                  border: '1px solid rgba(255,82,82,0.4)',
+                                  borderRadius: '5px',
+                                  textAlign: 'center',
+                                }}>
+                                  ✗ Nesprávna! Správna: {formatCriterion(correctVal, calculationMode, decimalPlaces)}
+                                </div>
+                              )}
+                            </div>
+                          ) : isDone ? (
+                            <span style={{
+                              fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 400,
+                              color: rowFeedback[idx] === 'wrong' ? 'var(--color-warning)' : 'var(--color-text)',
+                            }}>
+                              {formatCriterion(correctVal, calculationMode, decimalPlaces)}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--color-axis)', fontSize: '13px' }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -300,15 +460,15 @@ function FormulaBox({calculationMode}){
   return(
     <div style={{
       margin: '14px 0', padding: '14px 16px',
-      background: 'rgba(33,150,243,0.06)',
-      border: '1px solid rgba(33,150,243,0.28)', borderRadius: '10px'
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid var(--color-border)', borderRadius: '10px'
     }}>
-      <div style={{ fontSize: '16px', color: 'var(--color-text-faint)', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.07em' }}>
+      <div style={{ fonSize: '16px', color: 'var(--color-text-faint)', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.07em' }}>
         Použité vzorce
       </div>
       <div style={{
         fontFamily: MATH_FONT, fontSize: '20px', textAlign: 'center',
-        color: '#e8e8f0', padding: '10px 14px', background: 'rgba(33,150,243,0.08)',
+        color: ' var(--color-text-faint)', padding: '10px 14px', background: 'rgba(0,0,0,0)',
         borderRadius: '7px', marginBottom: '8px',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
       }}>
@@ -319,14 +479,14 @@ function FormulaBox({calculationMode}){
         <Frac
           top={<span style={{ fontStyle: 'italic' }}>f(x<sub style={{ fontStyle: 'normal', fontSize: '11px' }}>n</sub>)</span>}
           bot={<span style={{ fontStyle: 'italic' }}>f&prime;(x<sub style={{ fontStyle: 'normal', fontSize: '11px' }}>n</sub>)</span>}
-          color="#e8e8f0" size="15px"
+          color="var(--color-text-faint)" size="15px"
         />
       </div>
       {calculationMode === 'iterations' && (
         <>
           <div style={{
             fontFamily: MATH_FONT, fontSize: '18px', textAlign: 'center',
-            color: '#e8c8f8', padding: '10px 14px', background: 'rgba(156,39,176,0.07)',
+            color: 'var(--color-text-faint)', padding: '10px 14px', background: 'rgba(0,0,0,0)',
             borderRadius: '7px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', gap: '6px', marginBottom: '8px',
           }}>
@@ -335,7 +495,7 @@ function FormulaBox({calculationMode}){
             <Frac
               top={<span style={{ fontStyle: 'italic' }}>|f(x<sub style={{ fontStyle: 'normal', fontSize: '11px' }}>n</sub>)|</span>}
               bot={<span style={{ fontStyle: 'italic' }}>m</span>}
-              color="#e8c8f8" size="14px"
+              color="var(--color-text-faint)" size="14px"
             />
           </div>
           <div style={{ fontSize: '14px', color: 'var(--color-text-faint)', marginTop: '4px', lineHeight: '1.5', textAlign: 'center' }}>
@@ -346,8 +506,8 @@ function FormulaBox({calculationMode}){
       {calculationMode === 'epsilon' && (
         <div style={{
           fontFamily: MATH_FONT, fontSize: '17px', textAlign: 'center',
-          color: '#c8f0d8', padding: '8px 14px',
-          background: 'rgba(0,200,100,0.07)', borderRadius: '7px', fontStyle: 'italic'
+          color: ' var(--color-text-faint)', padding: '8px 14px',
+          background: 'rgba(0,0,0,0)', borderRadius: '7px', fontStyle: 'italic'
         }}>
           f(x<sub style={{ fontStyle: 'normal', fontSize: '10px' }}>n</sub>&thinsp;&minus;&thinsp;ε)&thinsp;&middot;&thinsp;f(x<sub style={{ fontStyle: 'normal', fontSize: '10px' }}>n</sub>&thinsp;+&thinsp;ε)&thinsp;&lt;&thinsp;0
         </div>
@@ -378,16 +538,16 @@ function ErrorEstimate({steps, decimalPlaces}){
       border: '1px solid var(--color-border)', borderRadius: '10px'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-        <div style={{ color: '#ce93d8', fontWeight: 'bold', fontSize: '15px' }}>Odhad chyby výsledku</div>
+        <div style={{ color: 'var(--color-text-faint)', fontWeight: 'bold', fontSize: '16px' }}>Odhad chyby výsledku</div>
         <button
           onClick={()=> setShowHelp(v => !v)}
           style={{
-            padding: '3px 10px', fontSize: '12px', fontWeight: 'bold',
+            padding: '3px 10px', fontSize: '13px', fontWeight: 'bold',
             background: showHelp ? 'rgba(156,39,176,0.3)' : 'rgba(156,39,176,0.12)',
             border: '1px solid var(--color-border)',
             borderRadius: '5px', color: '#ffffff', cursor: 'pointer',
           }}
-        >{showHelp ? '✕ Zavrieť' : 'Pomocník'}</button>
+        >{showHelp ? 'Zavrieť' : 'Pomocník'}</button>
       </div>
 
       {showHelp && (
@@ -397,36 +557,32 @@ function ErrorEstimate({steps, decimalPlaces}){
           border: '1px solid rgba(156,39,176,0.3)',
           borderRadius: '8px', fontSize: '13px', lineHeight: '1.75', color: '#ffffff'
         }}>
-          <div style={{ color: '#ce93d8', fontWeight: 'bold', marginBottom: '10px' }}>Ako nájsť m?</div>
-          <div style={{ marginBottom: '10px' }}>
-            <span style={{ color: '#00e676', fontWeight: 'bold' }}>Krok 1:</span>{' '}
-            Vypočítať <strong>f′(x)</strong> na separačnom intervale ⟨a; b⟩.
+          <div style={{ color: '#ce93d8', fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>
+            Ako nájsť m?
           </div>
           <div style={{ marginBottom: '10px' }}>
-            <span style={{ color: '#00e676', fontWeight: 'bold' }}>Krok 2:</span>{' '}
-            Nájsť minimum absolútnej hodnoty f′(x):
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'10px', margin:'8px 0', background:'rgba(0,230,118,0.07)', borderRadius:'6px', fontFamily:MF, fontSize:'18px', color:'#00e676' }}>
-              <span style={{ fontStyle:'italic' }}>m</span>
-              <span style={{ fontSize:'16px' }}>=</span>
-              <span style={{ fontSize:'14px' }}>min<sub style={{ fontFamily:'sans-serif', fontSize:'10px' }}>x∈⟨a,b⟩</sub></span>
-              <span style={{ fontStyle:'italic' }}>|f′(x)|</span>
+            <span style={{ color: '#00e676', fontWeight: 'bold', fontSize: '16px' }}>Krok 1:</span>{' '}
+            <div style={{fontSize: '15px'}}>
+            Vypočítať <strong>f′(x)</strong> na separačnom intervale ⟨a; b⟩.
             </div>
           </div>
           <div style={{ marginBottom: '10px' }}>
-            <span style={{ color: '#ffeb3b', fontWeight: 'bold' }}>Krok 3:</span>{' '}
-            Dosadiť do vzorca:
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', padding:'10px', margin:'8px 0', background:'rgba(255,235,59,0.06)', borderRadius:'6px', fontFamily:MF, fontSize:'18px', color:'#e8c8f8' }}>
-              <span style={{ fontStyle:'italic' }}>|α − x<sub style={{ fontStyle:'normal', fontSize:'11px' }}>n</sub>|</span>
-              <span style={{ fontSize:'16px' }}>≤</span>
-              <Frac top={<span style={{ fontStyle:'italic' }}>|f(x<sub style={{ fontStyle:'normal', fontSize:'11px' }}>n</sub>)|</span>} bot={<span style={{ fontStyle:'italic' }}>m</span>} color="#e8c8f8" size="14px" />
+            <span style={{ color: '#00e676', fontWeight: 'bold' , fontSize: '16px'}}>Krok 2:</span>{' '}
+            <div style={{fontSize: '15px'}}>
+          Nájsť minimum absolútnej hodnoty f′(x):
+          </div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'10px', margin:'8px 0', background:'rgba(0,230,118,0.07)', borderRadius:'6px', fontFamily:MF, fontSize:'18px', color:'#00e676' }}>
+              <span style={{ fontStyle:'italic' }}>m</span>
+              <span style={{ fontSize:'16px' }}>=</span>
+              <span style={{ fontSize:'13px', flexDirection: 'column', display: 'inline-flex', alignItems: 'center', padding: '16px'}}>min<sub style={{ fontFamily:'sans-serif', fontSize:'13px' }}>x∈⟨a,b⟩</sub></span>
+              <span style={{ fontStyle:'italic' }}>|f′(x)|</span>
             </div>
           </div>
           <div style={{ background:'rgba(33,150,243,0.08)', borderRadius:'6px', padding:'10px' }}>
             <div style={{ color:'#2196f3', fontWeight:'bold', marginBottom:'5px' }}>Poznámka:</div>
-            <ul style={{ paddingLeft:'16px', color:'#ffffff' }}>
-              <li>Ak <strong>f′(x) &gt; 0</strong> na celom intervale → m = min f′(x)</li>
-              <li>Ak <strong>f′(x) &lt; 0</strong> na celom intervale → m = min |f′(x)|</li>
-              <li>Ak f′ <strong>mení znamienko</strong> → m môže byť 0 → metóda nekonverguje</li>
+            <ul style={{ paddingLeft:'16px', color:'#ffffff', fontSize:'15px' }}>
+              <li>Ak <strong>f′(x) &gt; 0</strong> na celom intervale tak m = min f′(x)</li>
+              <li>Ak <strong>f′(x) &lt; 0</strong> na celom intervale tak m = min|f′(x)|</li>
             </ul>
           </div>
         </div>
@@ -438,17 +594,17 @@ function ErrorEstimate({steps, decimalPlaces}){
           { label:'|f(x',        sub:fxN,  value:fmt(fx), color:'#2196f3', dot:'#2196f3' },
         ].map(({ label, sub, value, color, dot }, i) => (
           <div key={i} style={{ padding:'8px 10px', background:'var(--color-bg)', borderRadius:'6px', textAlign:'center', borderLeft:`3px solid ${color}` }}>
-            <div style={{ color:'var(--color-axis)', marginBottom:'5px', fontSize:'13px', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
+            <div style={{ color:'var(--color-axis)', marginBottom:'5px', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
               <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:dot, display:'inline-block', flexShrink:0 }}/>
               <span>{label}{sub != null ? <sub>{sub}</sub> : null}{sub != null ? ')|' : ''}</span>
             </div>
-            <div style={{ color, fontFamily:'monospace', fontWeight:'bold', fontSize:'13px' }}>{value}</div>
+            <div style={{ color, fontFamily:'monospace', fontWeight:'bold', fontSize:'16px' }}>{value}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ padding:'12px 14px', borderRadius:'8px', background:'rgba(156,39,176,0.12)', textAlign:'center' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', fontFamily:MF, fontSize:'20px', color:'#ce93d8', fontWeight:'bold' }}>
+      <div style={{ padding:'12px 14px', borderRadius:'8px', background:'rgba(255,255,255,0.04)', textAlign:'center' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', fontFamily:MF, fontSize:'20px', color:'var(--color-axis)', fontWeight:'bold' }}>
           <span style={{ fontStyle:'italic' }}>|α − x<sub style={{ fontStyle:'normal', fontFamily:'sans-serif', fontSize:'12px' }}>{finalN}</sub>|</span>
           <span style={{ fontSize:'18px' }}>≤</span>
           <span style={{ fontFamily:'monospace', fontSize:'18px' }}>{fmt(lastStep.odhad_chyby)}</span>

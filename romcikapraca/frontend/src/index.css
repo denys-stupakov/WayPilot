@@ -157,7 +157,7 @@ body{
 
 .mode-selection-title {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 16px;
   letter-spacing: 0.07em;
   text-transform: none;
   margin-bottom: 14px;
@@ -475,24 +475,93 @@ math-field:focus-within {
   border: 1px solid var(--color-border-subtle);
 }
 
-.validation-title { font-weight: 600; font-size: 14px; text-transform: none; letter-spacing: 0.07em; margin-bottom: 10px; color: var(--color-text-faint); }
+.validation-title {
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0.07em;
+  margin-bottom: 10px;
+  color: var(--color-text-faint);
+}
 
-.validation-item { padding: 10px 12px; margin-bottom: 7px; border-radius: 6px; border-left: 3px solid; }
-.validation-item.valid { background-color: var(--color-success-bg); border-left-color: var(--color-success); }
-.validation-item.invalid { background-color: var(--color-danger-bg);  border-left-color: var(--color-danger); }
-.validation-detail { margin-top: 5px; font-size: 12px; color: var(--color-text-dim); line-height: 1.6; }
+.validation-item {
+  padding: 10px 12px;
+  margin-bottom: 7px;
+  border-radius: 6px;
+  border-left: 3px solid;
+}
+
+.validation-item.valid {
+  background-color: var(--color-success-bg);
+  border-left-color: var(--color-success);
+}
+
+.validation-item.invalid {
+  background-color: var(--color-danger-bg);
+  border-left-color: var(--color-danger);
+}
+
+.validation-detail {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--color-text-dim);
+  line-height: 1.6; }
 
 /* CONVERGENCE*/
 
-.convergence-results-box { margin-top: 12px; padding: 12px; background-color: var(--color-bg); border-radius: 8px; }
-.convergence-title { font-weight: 600; font-size: 11px; text-transform: none; letter-spacing: 0.07em; margin-bottom: 10px; color: var(--color-text-faint); }
-.convergence-item { padding: 12px; margin-bottom: 8px; border-radius: 6px; border-left: 3px solid; }
-.convergence-item.valid { background-color: var(--color-success-bg); border-left-color: var(--color-success); }
-.convergence-item.invalid { background-color: var(--color-danger-bg);  border-left-color: var(--color-danger); }
-.convergence-detail { margin-top: 8px; }
-.convergence-check { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; font-size: 13px; }
-.check-pass { color: var(--color-success); font-weight: 600; }
-.check-fail { color: var(--color-danger);  font-weight: 600; }
+.convergence-results-box {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: var(--color-bg);
+  border-radius: 8px;
+}
+
+.convergence-title {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0.07em;
+  margin-bottom: 10px;
+  color: var(--color-text-faint);
+}
+
+.convergence-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border-left: 3px solid;
+}
+
+.convergence-item.valid {
+  background-color: var(--color-success-bg);
+  border-left-color: var(--color-success);
+}
+
+.convergence-item.invalid {
+  background-color: var(--color-danger-bg);
+  border-left-color: var(--color-danger);
+}
+
+.convergence-detail {
+  margin-top: 8px;
+}
+
+.convergence-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.check-pass {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.check-fail {
+  color: var(--color-danger);
+  font-weight: 600;
+}
 
 /*BOXES */
 
@@ -516,7 +585,11 @@ math-field:focus-within {
   margin-bottom: 7px;
 }
 
-.explanation-content { color: var(--color-text-dim); font-size: 14px; line-height: 1.7; }
+.explanation-content {
+  color: var(--color-text-dim);
+  font-size: 14px;
+  line-height: 1.7;
+}
 
 /*RESULTS */
 
@@ -531,12 +604,42 @@ math-field:focus-within {
   align-items: center;
 }
 
-.newton-result-root { font-size: 11px; text-transform: none; letter-spacing: 0.07em; color: var(--color-text-faint); margin-bottom: 4px; }
-.newton-result-value { font-family: var(--font-mono); font-size: 20px; font-weight: 500; color: var(--color-text); }
-.newton-result-iterations-label { font-size: 11px; text-transform: none; letter-spacing: 0.07em; color: var(--color-text-faint); }
-.newton-result-iterations-value { font-family: var(--font-mono); font-size: 24px; font-weight: 600; color: var(--color-text); text-align: right; }
+.newton-result-root {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0.07em;
+  color: var(--color-text-faint);
+  margin-bottom: 4px;
+}
 
-.newton-table-title { font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0.07em; margin-bottom: 7px; color: var(--color-text-faint); }
+.newton-result-value {
+  font-family: var(--font-mono);
+  font-size: 20px; font-weight: 500;
+  color: var(--color-text);
+}
+
+.newton-result-iterations-label {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0.07em;
+  color: var(--color-text-faint);
+}
+
+.newton-result-iterations-value {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.newton-table-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.07em;
+  margin-bottom: 7px;
+  color: var(--color-text-faint); }
 
 .newton-table-container {
   max-height: 280px;
@@ -546,8 +649,17 @@ math-field:focus-within {
   margin-bottom: 12px;
 }
 
-.newton-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.newton-table thead { position: sticky; top: 0; background-color: var(--color-elevated); z-index: 1; }
+.newton-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.newton-table thead {
+  position: sticky; top: 0;
+  background-color: var(--color-elevated);
+  z-index: 1;
+}
 
 .newton-table th {
   padding: 9px 10px;

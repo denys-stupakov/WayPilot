@@ -41,7 +41,7 @@ def newton_method_epsilon(f_expr, x, x0=1.0, epsilon=1e-6, max_iter=100, interva
             return {"error": f"Chyba pri výpočte v bode x={xn:.4f}: {str(e)}"}
 
         if abs(dfx)< 1e-10:
-            return {"error": f"Derivácia je príliš malá v bode x={xn:.4f}. Zvoľte iný počiatočný bod."}
+            return {"error": f"Derivácia je príliš malá v bode x={xn:.4f}. Zvoľte iný štartovací bod."}
 
         xn_next = xn - fx / dfx
         m1, m2, odhad = _compute_estimates(df, d2f, xn, xn_next, fx)

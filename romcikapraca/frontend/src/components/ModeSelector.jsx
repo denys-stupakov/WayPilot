@@ -231,7 +231,7 @@ function HelperModal({ onClose }) {
         <div style={{ padding:"18px 18px 22px", overflowY:"auto", flex:1 }}>
           {tab === "theory" && (
             <div>
-              <p style={{ fontSize:16, color:"rgba(220,220,224,0.7)", lineHeight:1.65, marginBottom:16, fontFamily:"'IBM Plex Sans',sans-serif" }}>
+              <p style={{ fontSize:16, color:"var(--color-axis)", lineHeight:1.65, marginBottom:16, fontFamily:"'IBM Plex Sans',sans-serif" }}>
                 Newtonova metóda hľadá koreň rovnice f(x) = 0 tak, že v každom bode vedie dotyčnicu ku krivke a vypočíta jej priesečník s osou x.
               </p>
               <div style={{ background:"#16161a", borderLeft:"3px solid #474747", borderRadius:"0 8px 8px 0", padding:"14px 18px", marginBottom:18, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -239,7 +239,7 @@ function HelperModal({ onClose }) {
               </div>
               {[
                 ["1", "Zvolíme počiatočný bod x₀ v blízkosti koreňa"],
-                ["2", "Vedieme dotyčnicu ku krivke f(x) v bode (x₀, f(x₀))"],
+                ["2", "Vedieme dotyčnicu ku krivke f(x) v bode [x₀, f(x₀)]"],
                 ["3", "Nájdeme priesečník dotyčnice s osou x, teda x₁"],
                 ["4", "Opakujeme, kým |f(xₙ)| < ε alebo sa nevykoná n iterácií"],
               ].map(([num, text]) => (
@@ -264,10 +264,10 @@ function HelperModal({ onClose }) {
               </div>
               <DemoCanvas />
               <div style={{ display:"flex", alignItems:"center", gap:16, marginTop:10, flexWrap:"wrap" }}>
-                <span style={{ fontSize:16, color:"rgba(220,220,224,0.7)", fontFamily:"'IBM Plex Sans',sans-serif" }}>
+                <span style={{ fontSize:16, color:"var(--color-axis)", fontFamily:"'IBM Plex Sans',sans-serif" }}>
                   Koreň α ≈ <span style={{ color:"#6aaa84", fontFamily:"'IBM Plex Mono',monospace" }}>1.4142</span>
                 </span>
-                <span style={{ fontSize:16, color:"rgba(255,243,243,0.4)", fontFamily:"'IBM Plex Sans',sans-serif" }}>
+                <span style={{ fontSize:16, color:"var(--color-axis)", fontFamily:"'IBM Plex Sans',sans-serif" }}>
                   Prerušovaná čiara je zvislica na krivku. Plná čiara je dotyčnica
                 </span>
               </div>
@@ -302,7 +302,7 @@ export default function ModeSelector({ calculationMode, epsilonValue, iterations
         onClick={() => setShowHelper(true)}
         title="Ako funguje Newtonova metóda?"
         style={{
-          position:"absolute", top:14, right:14,
+          position:"absolute", top:10, right:14,
           width:30, height:30, borderRadius:"50%",
           background:"rgba(71,71,71,0.25)",
           border:"1px solid #474747",
@@ -342,7 +342,7 @@ export default function ModeSelector({ calculationMode, epsilonValue, iterations
             • f(x<sub>n</sub>+ε) = hodnota tesne <strong>vpravo</strong> od x<sub>n</sub>
           </div>
           <div style={{ padding:8, background:"rgba(106,170,132,0.1)", borderRadius:4, marginBottom:8, color:"#dcdce0", fontSize:14 }}>
-            <strong>Ak súčin &lt; 0:</strong> hodnoty majú rôzne znamienka tak koreň je veľmi blízko.
+            Ak súčin &lt; 0, tak hodnoty majú rôzne znamienka a koreň je veľmi blízko.
           </div>
           <div style={{ fontSize:14, fontStyle:"italic", color:"rgba(220,220,224,0.7)" }}>
             Príklad: f(xₙ−ε) = 0.003, f(xₙ+ε) = −0.002. Súčin = −0.000006 &lt; 0 ✓

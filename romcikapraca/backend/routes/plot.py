@@ -205,12 +205,23 @@ def plot_single():
         data = request.json
         expr_text = data.get("expr", "")
         label = data.get("label", "f(x)")
+        # Получаем диапазон от фронтенда если передан
+        custom_xmin = data.get("xmin", None)
+        custom_xmax = data.get("xmax", None)
         x = symbols("x")
 
         f_expr = _parse_expr(expr_text)
+
         xmin, xmax, ymin_hint, ymax_hint = get_smart_display_range(f_expr, f_expr, x)
 
-        xs = np.linspace(xmin, xmax, 15000)  # ← 15000 точек
+        # Если фронтенд передал узкий диапазон — используем его с отступом
+        if custom_xmin is not None and custom_xmax is not None:
+            span = custom_xmax - custom_xmin
+            pad = max(span * 0.5, 0.5)
+            xmin = custom_xmin - pad
+            xmax = custom_xmax + pad
+
+        xs = np.linspace(xmin, xmax, 15000)
         xs = xs[np.isfinite(xs)]
 
         try:
