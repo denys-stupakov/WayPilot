@@ -132,14 +132,18 @@ body{
   font-size: 16px !important;
   letter-spacing: 0.07em;
   text-transform:none; /*ddd*/
-  margin-bottom: 14px ;
+  margin-bottom: 14px;
   padding-top: 11px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-faint);
 }
 
-.step-title.step-1,
+.step-title.step-1{
+ padding-top: 1px;
+}
+
+
 .step-title.step-2,
 .step-title.step-3,
 .step-title.step-4,
@@ -417,7 +421,7 @@ math-field:focus-within {
 }
 
 .interval-input {
-  width: 64px;
+  width: 80px;
   padding: 5px 8px;
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
@@ -572,7 +576,6 @@ math-field:focus-within {
   font-size: 13px;
   line-height: 1.65;
   border: 1px solid var(--color-border-subtle);
-  border-left: 3px solid var(--color-func2);
   margin-bottom: 12px;
 }
 

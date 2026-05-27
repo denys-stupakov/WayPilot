@@ -3,7 +3,7 @@ import {Frac} from "../Fracs";
 import {formatSmartNumber} from "../../utils";
 
 function getDecimalPlaces(epsilon, mode){
-  if(mode !== 'epsilon') return 6;
+  if(mode !== 'epsilon') return 8;
   if(epsilon >= 0.01)     return 4;
   if(epsilon >= 0.001)    return 6;
   if(epsilon >= 0.000001) return 8;
@@ -69,6 +69,7 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
   // строка n=0 -> steps[0].xn (x0, дано)
   // строка n=k (k>=1) -> steps[k-1].xn_next (xk, угадывается)
   const totalIterRows = steps.length + 1; // x0..xN
+  const criterionDecimalPlaces = decimalPlaces + 1;
   const getIterValue = (n) =>
     n === 0 ? steps[0].xn : steps[n - 1].xn_next;
 
@@ -331,16 +332,66 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
                   })
                 ) : (
                   /* ============ EPSILON: две колонки x_n + критерий ============ */
-                  (allRevealed ? steps : steps.slice(0, activeIndex + 1)).map((s, idx)=>{
-                    const isDone     = allRevealed || idx < activeIndex || !!rowFeedback[idx];
-                    const isActive   = !allRevealed && idx === activeIndex && !rowFeedback[idx];
+                  (
+                    allRevealed
+                      ? Array.from({ length: steps.length + 1 }, (_, i) => i)
+                      : Array.from({ length: activeIndex + 2 }, (_, i) => i)
+                  ).map((rowIndex) => {
+
+                    // x0 строка
+                    if(rowIndex === 0){
+                      const x0 = steps[0]?.xn;
+
+                      return (
+                        <tr key="x0-row">
+                          <td style={{ color: 'var(--color-text)' }}>0</td>
+
+                          <td style={{
+                            color: 'var(--color-text)',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '13px'
+                          }}>
+                            {formatXn(x0, decimalPlaces)}
+                          </td>
+
+                          <td>
+                            <span style={{
+                              color: 'var(--color-axis)',
+                              fontSize: '13px'
+                            }}>
+                              —
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    // обычные шаги
+                    const idx = rowIndex - 1;
+                    const s = steps[idx];
+
+                    const isDone =
+                      allRevealed ||
+                      idx < activeIndex ||
+                      !!rowFeedback[idx];
+
+                    const isActive =
+                      !allRevealed &&
+                      idx === activeIndex &&
+                      !rowFeedback[idx];
+
                     const isFlashing = wrongFlash === idx;
+
                     const correctVal = getCorrectValue(s);
 
                     return(
                       <tr
                         key={s.iter}
-                        className={allRevealed && idx === steps.length - 1 ? 'final-row' : ''}
+                        className={
+                          allRevealed && idx === steps.length - 1
+                            ? 'final-row'
+                            : ''
+                        }
                         style={{
                           transition: 'background 0.25s',
                           background: isFlashing
@@ -350,72 +401,143 @@ export default function Step5Results({data, calculationMode, epsilonValue, onRev
                               : 'transparent',
                         }}
                       >
-                        <td style={{ color: 'var(--color-text)' }}>{s.iter}</td>
-                        <td style={{ color: 'var(--color-text)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
-                          {formatXn(s.xn, decimalPlaces)}
+                        <td style={{ color: 'var(--color-text)' }}>
+                          {rowIndex}
                         </td>
+
+                        <td style={{
+                          color: 'var(--color-text)',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '13px'
+                        }}>
+                          {formatXn(s.xn_next, decimalPlaces)}
+                        </td>
+
                         <td style={{ color: 'var(--color-text)' }}>
                           {isActive ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px',
+                              alignItems: 'center'
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                gap: '4px',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
                                 <input
                                   type="number"
                                   step="any"
                                   value={userGuesses[idx] || ''}
                                   onChange={(e)=>{
                                     if(isFlashing) return;
-                                    setUserGuesses(prev => ({ ...prev, [idx]: e.target.value }));
-                                    if(rowFeedback[idx] === 'wrong')
-                                      setRowFeedback(prev => ({ ...prev, [idx]: null }));
+
+                                    setUserGuesses(prev => ({
+                                      ...prev,
+                                      [idx]: e.target.value
+                                    }));
+
+                                    if(rowFeedback[idx] === 'wrong'){
+                                      setRowFeedback(prev => ({
+                                        ...prev,
+                                        [idx]: null
+                                      }));
+                                    }
                                   }}
-                                  onKeyDown={(e)=> e.key === 'Enter' && handleGuessCheck(idx)}
+                                  onKeyDown={(e)=>
+                                    e.key === 'Enter' &&
+                                    handleGuessCheck(idx)
+                                  }
                                   placeholder="?"
                                   autoFocus
                                   disabled={isFlashing}
                                   style={{
-                                    width: '110px', padding: '4px', textAlign: 'center',
-                                    background: isFlashing ? 'rgba(220,50,50,0.08)' : 'var(--color-bg)',
-                                    border: `1px solid ${isFlashing ? '#ff5252' : 'var(--color-border)'}`,
-                                    borderRadius: '4px', color: 'var(--color-text)', fontSize: '13px',
+                                    width: '110px',
+                                    padding: '4px',
+                                    textAlign: 'center',
+                                    background: isFlashing
+                                      ? 'rgba(220,50,50,0.08)'
+                                      : 'var(--color-bg)',
+                                    border: `1px solid ${
+                                      isFlashing
+                                        ? '#ff5252'
+                                        : 'var(--color-border)'
+                                    }`,
+                                    borderRadius: '4px',
+                                    color: 'var(--color-text)',
+                                    fontSize: '13px',
                                     transition: 'border-color 0.25s',
                                     opacity: isFlashing ? 0.7 : 1,
                                   }}
                                 />
+
                                 <button
                                   onClick={()=> handleGuessCheck(idx)}
                                   disabled={isFlashing}
                                   style={{
                                     padding: '4px 8px',
-                                    background: isFlashing ? 'rgba(220,50,50,0.25)' : 'var(--color-button)',
-                                    border: 'none', borderRadius: '4px', color: 'white',
-                                    fontSize: '11px', cursor: isFlashing ? 'not-allowed' : 'pointer',
+                                    background: isFlashing
+                                      ? 'rgba(220,50,50,0.25)'
+                                      : 'var(--color-button)',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    color: 'white',
+                                    fontSize: '11px',
+                                    cursor: isFlashing
+                                      ? 'not-allowed'
+                                      : 'pointer',
                                     transition: 'background 0.25s',
                                   }}
-                                >✓</button>
+                                >
+                                  ✓
+                                </button>
                               </div>
 
                               {isFlashing && (
                                 <div style={{
-                                  fontSize: '11px', color: '#ff5252', fontWeight: 'bold',
+                                  fontSize: '11px',
+                                  color: '#ff5252',
+                                  fontWeight: 'bold',
                                   padding: '5px 10px',
                                   background: 'rgba(220,50,50,0.12)',
                                   border: '1px solid rgba(255,82,82,0.4)',
                                   borderRadius: '5px',
                                   textAlign: 'center',
                                 }}>
-                                  ✗ Nesprávna! Správna: {formatCriterion(correctVal, calculationMode, decimalPlaces)}
+                                  Nesprávna! Správna: {
+                                    formatCriterion(
+                                      correctVal,
+                                      calculationMode,
+                                      decimalPlaces
+                                    )
+                                  }
                                 </div>
                               )}
                             </div>
                           ) : isDone ? (
                             <span style={{
-                              fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 400,
-                              color: rowFeedback[idx] === 'wrong' ? 'var(--color-warning)' : 'var(--color-text)',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '13px',
+                              fontWeight: 400,
+                              color:
+                                rowFeedback[idx] === 'wrong'
+                                  ? 'var(--color-warning)'
+                                  : 'var(--color-text)',
                             }}>
-                              {formatCriterion(correctVal, calculationMode, decimalPlaces)}
+                              {formatCriterion( correctVal,
+                                  calculationMode,
+                                  criterionDecimalPlaces
+                              )}
                             </span>
                           ) : (
-                            <span style={{ color: 'var(--color-axis)', fontSize: '13px' }}>—</span>
+                            <span style={{
+                              color: 'var(--color-axis)',
+                              fontSize: '13px'
+                            }}>
+                              —
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -460,7 +582,7 @@ function FormulaBox({calculationMode}){
   return(
     <div style={{
       margin: '14px 0', padding: '14px 16px',
-      background: 'rgba(255,255,255,0.04)',
+      background: 'var(--color-bg)',
       border: '1px solid var(--color-border)', borderRadius: '10px'
     }}>
       <div style={{ fonSize: '16px', color: 'var(--color-text-faint)', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.07em' }}>
@@ -538,12 +660,12 @@ function ErrorEstimate({steps, decimalPlaces}){
       border: '1px solid var(--color-border)', borderRadius: '10px'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-        <div style={{ color: 'var(--color-text-faint)', fontWeight: 'bold', fontSize: '16px' }}>Odhad chyby výsledku</div>
+        <div style={{ color: 'var(--color-text-faint)', fontWeight: 'bold', fontSize: '17px' }}>Odhad chyby výsledku</div>
         <button
           onClick={()=> setShowHelp(v => !v)}
           style={{
             padding: '3px 10px', fontSize: '13px', fontWeight: 'bold',
-            background: showHelp ? 'rgba(156,39,176,0.3)' : 'rgba(156,39,176,0.12)',
+            background: showHelp ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.07)',
             border: '1px solid var(--color-border)',
             borderRadius: '5px', color: '#ffffff', cursor: 'pointer',
           }}
@@ -553,34 +675,49 @@ function ErrorEstimate({steps, decimalPlaces}){
       {showHelp && (
         <div style={{
           marginBottom: '14px', padding: '13px 15px',
-          background: 'rgba(156,39,176,0.06)',
-          border: '1px solid rgba(156,39,176,0.3)',
+          background: 'var(--color-bg)',
+          border: '1px solid var(--color-border)',
           borderRadius: '8px', fontSize: '13px', lineHeight: '1.75', color: '#ffffff'
         }}>
-          <div style={{ color: '#ce93d8', fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>
+          <div style={{ color: 'var(--color-text-faint)', fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>
             Ako nájsť m?
           </div>
           <div style={{ marginBottom: '10px' }}>
-            <span style={{ color: '#00e676', fontWeight: 'bold', fontSize: '16px' }}>Krok 1:</span>{' '}
+            <span style={{ color: 'var(--color-text-faint)', fontWeight: 'bold', fontSize: '16px' }}>Krok 1:</span>{' '}
             <div style={{fontSize: '15px'}}>
             Vypočítať <strong>f′(x)</strong> na separačnom intervale ⟨a; b⟩.
             </div>
           </div>
           <div style={{ marginBottom: '10px' }}>
-            <span style={{ color: '#00e676', fontWeight: 'bold' , fontSize: '16px'}}>Krok 2:</span>{' '}
+            <span style={{ color: 'var(--color-text-faint)', fontWeight: 'bold' , fontSize: '16px'}}>Krok 2:</span>{' '}
             <div style={{fontSize: '15px'}}>
           Nájsť minimum absolútnej hodnoty f′(x):
           </div>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'10px', margin:'8px 0', background:'rgba(0,230,118,0.07)', borderRadius:'6px', fontFamily:MF, fontSize:'18px', color:'#00e676' }}>
-              <span style={{ fontStyle:'italic' }}>m</span>
-              <span style={{ fontSize:'16px' }}>=</span>
-              <span style={{ fontSize:'13px', flexDirection: 'column', display: 'inline-flex', alignItems: 'center', padding: '16px'}}>min<sub style={{ fontFamily:'sans-serif', fontSize:'13px' }}>x∈⟨a,b⟩</sub></span>
-              <span style={{ fontStyle:'italic' }}>|f′(x)|</span>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '10px',
+              margin: '8px 0',
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: '6px',
+              fontFamily: MF,
+              fontSize: '18px',
+              color: '#00e676'
+            }}>
+              <span style={{fontStyle: 'italic', color: 'var(--color-axis)'}}>m</span>
+              <span style={{fontSize: '16px', color: 'var(--color-axis)'}}>=</span>
+              <span style={{display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.1}}>
+                <span style={{fontSize: '16px', color: 'var(--color-axis)'}}>min</span>
+                  <span style={{fontFamily: 'sans-serif', fontSize: '14px', color: 'var(--color-axis)'}}>x∈⟨a,b⟩</span>
+                </span>
+              <span style={{fontStyle: 'italic', color: 'var(--color-axis)'}}>|f′(x)|</span>
             </div>
           </div>
-          <div style={{ background:'rgba(33,150,243,0.08)', borderRadius:'6px', padding:'10px' }}>
-            <div style={{ color:'#2196f3', fontWeight:'bold', marginBottom:'5px' }}>Poznámka:</div>
-            <ul style={{ paddingLeft:'16px', color:'#ffffff', fontSize:'15px' }}>
+          <div style={{background: 'rgba(0,0,0,0)', borderRadius: '6px', padding: '10px'}}>
+            <div style={{color: '#f32121', fontWeight: 'bold', fontSize: '15px'}}>Poznámka:</div>
+            <ul style={{paddingLeft: '16px', color: '#ffffff', fontSize:'15px' }}>
               <li>Ak <strong>f′(x) &gt; 0</strong> na celom intervale tak m = min f′(x)</li>
               <li>Ak <strong>f′(x) &lt; 0</strong> na celom intervale tak m = min|f′(x)|</li>
             </ul>

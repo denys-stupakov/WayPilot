@@ -241,8 +241,6 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
 
       const convergingInterval = responseData.intervals?.find(r => r.converges);
       const interval = convergingInterval?.interval;
-      const xmin = interval ? interval[0] : null;
-      const xmax = interval ? interval[1] : null;
 
       if(f1 && f2){
         try{
@@ -268,15 +266,18 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
             }
           }
 
-          const plotData={
+          // derivativesData хранит m для использования в Step 4 (выбор x₀)
+          const derivData = {
             x1:rd1.x1, y1:rd1.y1, x2:rd2.x1, y2:rd2.y1, x0:rd0.x1, y0:rd0.y1,
             intersections:[], label0:"f(x)", label1:"f′(x)", label2:"f′′(x)",
             single_mode:false, derivatives_mode:true,
             display_range: rd1.display_range,
             m_value:mValue, m_x:mX, m_y:mY,
           };
-          setDerivativesData(plotData);
-          onPlot(plotData);
+          setDerivativesData(derivData);
+
+          // На графике шага 3 точка m не отображается — только кривые f, f′, f″
+          onPlot({...derivData, m_value:null, m_x:null, m_y:null});
         }catch{
           apiCall("/plot_single",{expr, label:"f(x)"},(rd)=>onPlot(rd),"Chyba pri zobrazení f(x)");
         }
@@ -358,18 +359,21 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
 
     await apiCall("/plot", body, async (newtonData)=>{
       if(calculationMode === 'epsilon'){
+        // Режим epsilon: только f(x) + итерации Ньютона, без маркера m
         try{
           const rd0 = await fetch("/plot_single",{
             method: "POST", headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ expr: getExpr(), label: "f(x)" }),
           }).then(r=> r.json());
-          onPlot({
-            x1: rd0.x1, y1: rd0.y1, x2: [], y2: [],
-            intersections: [], label1: "f(x)",
-            single_mode: true, newton: newtonData.newton,
-          });
+            onPlot({
+              x1: rd0.x1, y1: rd0.y1, x2: [], y2: [],
+              intersections: [], label1: "f(x)",
+              single_mode: true, newton: newtonData.newton,
+              x0_init: newtonData.newton?.steps?.[0]?.xn ?? null,
+            });
         }catch{ onPlot(newtonData); }
       }else{
+        // Режим iterations: f(x) синий + f′(x) зелёный (как в шаге 3) + маркер m
         const f1 = convergenceResults?.first_derivative;
         try{
           const [rd0, rd1]= await Promise.all([
@@ -382,15 +386,20 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
               body: JSON.stringify({ expr: f1+"=0", label: "f′(x)" }),
             }).then(r=>r.json()) : Promise.resolve(null),
           ]);
+          // f(x) → x0/y0 (синий #2196f3), f′(x) → x1/y1 (зелёный через use_derivative_colors)
+          // derivatives_mode остаётся false чтобы показывался маркер "Nájdený koreň"
           onPlot({
-            x1:rd0.x1, y1:rd0.y1,
-            x2:rd1?rd1.x1:[], y2:rd1?rd1.y1:[],
-            intersections:[], label1:"f(x)", label2:"f′(x)",
-            single_mode:false, derivatives_mode:false,
-            newton:newtonData.newton,
-            m_value:derivativesData?.m_value??null,
-            m_x:derivativesData?.m_x??null,
-            m_y:derivativesData?.m_y??null,
+            x0: rd0.x1,            y0: rd0.y1,
+            x1: rd1 ? rd1.x1 : [], y1: rd1 ? rd1.y1 : [],
+            x2: [],                y2: [],
+            intersections: [], label0: "f(x)", label1: "f′(x)",
+            single_mode: false, derivatives_mode: false,
+            use_derivative_colors: true,
+            newton: newtonData.newton,
+            x0_init: newtonData.newton?.steps?.[0]?.xn ?? null,
+            m_value: derivativesData?.m_value ?? null,
+            m_x:     derivativesData?.m_x     ?? null,
+            m_y:     derivativesData?.m_y     ?? null,
           });
         }catch{ onPlot(newtonData); }
       }
@@ -438,6 +447,7 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
           onSubmit={handleStep1}
           onInsertLatex={insertLatex}
           onInsertFrac={insertFrac}
+          showSplitInfo={currentStep <= 2}
         />
       </div>
 
@@ -484,6 +494,7 @@ export default function SidePanel({data, onPlot, onModeChange, onHighlightChange
             convergenceResults={convergenceResults}
             condition3Result={condition3Result}
             mX={derivativesData?.m_x ?? null}
+            derivativesData={derivativesData}
           />
         </div>
       )}

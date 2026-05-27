@@ -322,7 +322,7 @@ export default function ModeSelector({ calculationMode, epsilonValue, iterations
       >
         <span className="mode-button-title">Presnosť (ε-kritérium)</span>
         <span className="mode-button-subtitle" style={{ color:"rgba(220,220,224,0.7)" }}>
-           Výpočet pokračuje, kým f(x<sub>n</sub>-ε)·f(x<sub>n</sub>+ε) &lt; 0
+           Výpočet pokračuje, kým f(x<sub>n</sub> - ε) · f(x<sub>n</sub> + ε) &lt; 0
           <span
             onClick={e => { e.stopPropagation(); setShowEpsilonHelp(!showEpsilonHelp); }}
             style={{ marginLeft:8, padding:"2px 8px", fontSize:12, background:"rgba(122,172,204,0.15)", border:"1px solid #7aa5a5", borderRadius:4, cursor:"pointer", color:"#7aa5a5", display:"inline-block" }}>
@@ -338,14 +338,14 @@ export default function ModeSelector({ calculationMode, epsilonValue, iterations
             Kontroluje, či funkcia <strong>mení znamienko</strong> v malej okolí bodu x<sub>n</sub>.
           </div>
           <div style={{ marginBottom:8, color:"#dcdce0", fontSize:14 }}>
-            • f(x<sub>n</sub>−ε) = hodnota tesne <strong>vľavo</strong> od x<sub>n</sub><br/>
-            • f(x<sub>n</sub>+ε) = hodnota tesne <strong>vpravo</strong> od x<sub>n</sub>
+            • f(x<sub>n</sub> − ε) = hodnota tesne <strong>vľavo</strong> od x<sub>n</sub><br/>
+            • f(x<sub>n</sub> + ε) = hodnota tesne <strong>vpravo</strong> od x<sub>n</sub>
           </div>
           <div style={{ padding:8, background:"rgba(106,170,132,0.1)", borderRadius:4, marginBottom:8, color:"#dcdce0", fontSize:14 }}>
             Ak súčin &lt; 0, tak hodnoty majú rôzne znamienka a koreň je veľmi blízko.
           </div>
           <div style={{ fontSize:14, fontStyle:"italic", color:"rgba(220,220,224,0.7)" }}>
-            Príklad: f(xₙ−ε) = 0.003, f(xₙ+ε) = −0.002. Súčin = −0.000006 &lt; 0 ✓
+            Príklad: f(x<sub>n</sub> − ε) = 0.003, f(x<sub>n</sub> + ε) = −0.002. Súčin = −0.000006 &lt; 0 ✓
           </div>
         </div>
       )}
@@ -377,6 +377,12 @@ export default function ModeSelector({ calculationMode, epsilonValue, iterations
               </div>
               <input
                 type="number" step="0.000001" value={epsilonValue}
+                  onKeyDown={e => {
+                      if (!/[\d.]/.test(e.key) &&
+                          !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter','Home','End'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                 onChange={e => { onEpsilonChange(e.target.value); setEpsilonWarning(null); }}
                 onBlur={e => {
                   const raw = e.target.value;
@@ -418,12 +424,18 @@ export default function ModeSelector({ calculationMode, epsilonValue, iterations
               <input
                 type="number" step="1" min="1" max={ITERATIONS_MAX}
                 value={iterationsCount}
+                onKeyDown={e => {
+                    if (!/\d/.test(e.key) &&
+                        !['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Enter','Home','End'].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                 onChange={e => handleIterationsChange(e.target.value)}
                 className="input-field"
                 style={iterAtMax ? { borderColor:"var(--color-warning)" } : undefined}
               />
               {iterAtMax && (
-                <div style={{ marginTop:6, padding:"6px 10px", background:"rgba(251,191,36,0.08)", border:"1px solid var(--color-warning)", borderRadius:6, fontSize:12, color:"var(--color-warning)", lineHeight:1.5 }}>
+                <div style={{ marginTop:6, padding:"6px 10px", background:"rgba(251,191,36,0.08)", border:"1px solid var(--color-warning)", borderRadius:6, fontSize:14, color:"var(--color-warning)", lineHeight:1.5 }}>
                   Maximálny povolený počet iterácií je {ITERATIONS_MAX}.
                 </div>
               )}

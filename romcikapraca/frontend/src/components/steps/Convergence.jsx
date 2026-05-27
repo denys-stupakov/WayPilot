@@ -1,5 +1,9 @@
 import LatexDisplay from "../LatexDisplay";
 
+// These match PlotArea trace colors exactly:
+// f(x)  → white  (label0, opacity 0.75 on graph → use white here)
+// f′(x) → colorFunc1 = #2196f3 (blue)
+// f′′(x)→ colorFunc2 = #ff9800 (orange)
 // Colors match PlotArea derivatives_mode traces exactly
 const CURVE_COLORS = {
   f:   '#2196f3',  // blue  — f(x)   (label0)
@@ -32,7 +36,6 @@ export default function Step3Convergence({
         </div>
       </div>
 
-      {/* Панель деривации — рисуется всегда как только есть convergenceResults */}
       {convergenceResults && (
         <>
           <DerivativesPanel convergenceResults={convergenceResults} />
@@ -44,7 +47,7 @@ export default function Step3Convergence({
         </>
       )}
 
-      <button onClick={onCheck} className="btn-primary btn-warning">Overiť konvergenciu →</button>
+      <button onClick={onCheck} className="btn-primary btn-warning">Overiť konvergenciu</button>
     </div>
   );
 }
@@ -123,15 +126,7 @@ function DerivRow({color, label, exprLabel, latex, expr}){
 }
 
 function ConvergenceResult({result, index}) {
-  // Визуализация рисуется всегда — независимо от того, выполнены условия или нет.
-  // ok определяет только цвет и итоговый текст.
-  const df_ok  = result.df_keeps_sign;
-  const d2f_ok = result.d2f_keeps_sign;
-  const ok = df_ok && d2f_ok;
-
-  // Если данные о знаках есть — показываем их, даже если условие не выполнено
-  const hasDfInfo  = result.df_sign_value !== undefined || result.df_keeps_sign !== undefined;
-  const hasD2fInfo = result.d2f_sign_value !== undefined || result.d2f_keeps_sign !== undefined;
+  const ok = result.df_keeps_sign && result.d2f_keeps_sign;
 
   return (
     <div style={{
@@ -143,66 +138,31 @@ function ConvergenceResult({result, index}) {
       <div style={{ fontSize: '17px', fontWeight: 'bold', marginBottom: '12px', textAlign: 'center' }}>
         Interval α ∈ ⟨{result.interval[0]}; {result.interval[1]}⟩
       </div>
-
       <div style={{ padding: '10px', background: 'var(--color-bg)', borderRadius: '6px' }}>
         <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>Kontrola podmienok:</div>
-
-        {/* Podmienka 1 — f'(x) zachováva znamienko */}
-        <CheckRow
-          pass={df_ok}
-          label="1)  f'(x) zachováva znamienko na separačnom intervale"
-        />
-        {/* Doplnková info: aké znamienko má f'(x) ak je k dispozícii */}
-        {!df_ok && result.df_sign_info && (
-          <div style={{
-            marginLeft: '24px', marginBottom: '6px', fontSize: '12px',
-            color: 'var(--color-warning)', fontStyle: 'italic'
-          }}>
-            {result.df_sign_info}
-          </div>
-        )}
-
-        {/* Podmienka 2 — f''(x) zachováva znamienko */}
-        <CheckRow
-          pass={d2f_ok}
-          label="2) f''(x) zachováva znamienko na separačnom intervale"
-        />
-        {!d2f_ok && result.d2f_sign_info && (
-          <div style={{
-            marginLeft: '24px', marginBottom: '6px', fontSize: '12px',
-            color: 'var(--color-warning)', fontStyle: 'italic'
-          }}>
-            {result.d2f_sign_info}
-          </div>
-        )}
+        <CheckRow pass={result.df_keeps_sign}  label="1)  f'(x) zachováva znamienko na separačnom intervale" />
+        <CheckRow pass={result.d2f_keeps_sign} label="2) f''(x) zachováva znamienko na separačnom intervale" />
       </div>
-
-      {/* Výsledok — vždy zobrazený */}
       <div style={{
         marginTop: '10px', padding: '10px',
         background: ok ? 'rgba(0,230,118,0.2)' : 'rgba(255,82,82,0.2)',
         borderRadius: '6px', textAlign: 'center', fontWeight: 'bold', fontSize: '16px',
         color: ok ? 'var(--color-success)' : 'var(--color-danger)'
       }}>
-        {ok
-          ? 'Podmienky 1 a 2 splnené'
-          : !df_ok && !d2f_ok
-            ? 'Podmienky 1 aj 2 nesplnené'
-            : !df_ok
-              ? 'Podmienka 1 nesplnená — f\'(x) mení znamienko'
-              : 'Podmienka 2 nesplnená — f\'\'(x) mení znamienko'
-        }
+        {ok ? 'Podmienky 1 a 2 splnené' : 'Podmienky 1 alebo 2 nesplnené'}
       </div>
     </div>
   );
 }
 
-function CheckRow({pass, label}){
-  const color = pass ? 'var(--color-success)' : 'var(--color-danger)';
+function CheckRow({pass, warn, label}){
+  const color = warn
+    ? (pass ? 'var(--color-success)' : 'var(--color-warning)')
+    : (pass ? 'var(--color-success)' : 'var(--color-danger)');
   return(
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '13px' }}>
       <span style={{ fontSize: '16px', fontWeight: 'bold', color }}>
-        {pass ? '✓' : '✗'}
+        {pass ? '✓' : (warn ? '⚠' : '✗')}
       </span>
       <div>{label}</div>
     </div>

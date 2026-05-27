@@ -75,7 +75,7 @@ def newton_method_epsilon(f_expr, x, x0=1.0, epsilon=1e-6, max_iter=100, interva
     except Exception:
         pass
 
-    _finalize_error_estimate(steps, df, d2f, xn)
+    _finalize_error_estimate(steps, df, d2f, xn, interval=interval)
 
     return {
         "root": float(xn), "iterations": len(steps), "steps": steps,
@@ -129,7 +129,7 @@ def newton_method_iterations(f_expr, x, x0=1.0, n_iterations=10, interval=None):
     except Exception:
         final_fx = None
 
-    _finalize_error_estimate(steps, df, d2f, xn)
+    _finalize_error_estimate(steps, df, d2f, xn, interval=interval)
 
     return {
         "root": float(xn), "iterations": n_iterations, "steps": steps,
@@ -138,39 +138,40 @@ def newton_method_iterations(f_expr, x, x0=1.0, n_iterations=10, interval=None):
     }
 
 
-def _finalize_error_estimate(steps, df, d2f, xn):
-
+def _finalize_error_estimate(steps, df, d2f, xn, interval=None):
     if not steps:
         return
 
-    #finderNONE for last step
-    src = steps[-1]
-
-    for s in reversed(steps):
-        if abs(s.get("fx", 0)) > 1e-10:
-            src = s
-            break
-
-    x_lo = min(src["xn"], xn)
-    x_hi = max(src["xn"], xn)
+    # Используем интервал, если он передан (самое важное!)
+    if interval and len(interval) == 2:
+        a, b = sorted(interval)   # гарантируем a < b
+        x_lo, x_hi = a, b
+    else:
+        # fallback (если интервала нет)
+        src = steps[-1]
+        x_lo = min(src["xn"], xn) - 0.5
+        x_hi = max(src["xn"], xn) + 0.5
 
     try:
-        probe = np.linspace(x_lo - 0.5, x_hi + 0.5, 200)
+        probe = np.linspace(x_lo, x_hi, 500)  # больше точек + точно по интервалу
 
         with np.errstate(all="ignore"):
             df_arr = np.abs(np.array(df(probe), dtype=float))
-            d2f_arr = np.abs(np.array(d2f(probe), dtype=float))
 
         df_vals = df_arr[np.isfinite(df_arr)]
-        d2f_vals = d2f_arr[np.isfinite(d2f_arr)]
         m1f = float(np.min(df_vals)) if len(df_vals) > 0 else None
-        m2f = float(np.max(d2f_vals)) if len(d2f_vals) > 0 else None
 
-        if m1f and m1f > 1e-12 and m2f is not None:
+        if m1f and m1f > 1e-12:
+            # Берём последнюю итерацию с достаточно большим |f(x)|
+            src = steps[-1]
+            for s in reversed(steps):
+                if abs(s.get("fx", 0)) > 1e-8:
+                    src = s
+                    break
+
             fx_used = abs(src["fx"])
-            steps[-1]["odhad_chyby"] = float((1 / m1f) * fx_used)
             steps[-1]["m1"] = float(m1f)
-            steps[-1]["m2"] = float(m2f)
+            steps[-1]["odhad_chyby"] = float((1 / m1f) * fx_used)
             steps[-1]["fx_for_estimate"] = float(fx_used)
             steps[-1]["iter_for_estimate"] = int(src["iter"] + 1)
     except Exception:

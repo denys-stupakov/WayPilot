@@ -1,8 +1,42 @@
 import { useState, useEffect } from "react";
 
+// Lineárna interpolácia y v bode x z (zostupne/vzostupne usporiadaného) poľa xs.
+function interpAt(xs, ys, x) {
+  if (!Array.isArray(xs) || !Array.isArray(ys) || xs.length < 2 || x == null) return null;
+  const n = xs.length;
+  const first = xs[0], last = xs[n - 1];
+
+  // zostupné pole — lineárne prejdeme
+  if (last < first) {
+    if (x >= first) return ys[0];
+    if (x <= last)  return ys[n - 1];
+    for (let i = 0; i < n - 1; i++) {
+      const xa = xs[i], xb = xs[i + 1];
+      if (x <= Math.max(xa, xb) && x >= Math.min(xa, xb)) {
+        const span = xb - xa;
+        return Math.abs(span) < 1e-15 ? ys[i] : ys[i] + ((x - xa) / span) * (ys[i + 1] - ys[i]);
+      }
+    }
+    return null;
+  }
+
+  // vzostupné pole — binárne vyhľadávanie
+  if (x <= first) return ys[0];
+  if (x >= last)  return ys[n - 1];
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (xs[mid] <= x) lo = mid; else hi = mid;
+  }
+  const span = xs[hi] - xs[lo];
+  if (Math.abs(span) < 1e-15) return ys[lo];
+  const t = (x - xs[lo]) / span;
+  return ys[lo] + t * (ys[hi] - ys[lo]);
+}
+
 export default function Step4StartPoint({
   x0Input, onX0Change, onCalculate,
-  convergenceResults, condition3Result, mX
+  convergenceResults, condition3Result, mX, derivativesData
 }) {
   const [verified, setVerified]             = useState(false);
   const [verifiedStatus, setVerifiedStatus] = useState(null);
@@ -20,11 +54,32 @@ export default function Step4StartPoint({
   const a         = interval?.[0] ?? null;
   const b         = interval?.[1] ?? null;
 
+  // f(x)·f''(x) v ľubovoľnom bode (interpolácia z načítaných kriviek)
+  const productAt = (x) => {
+    if (x == null || !derivativesData) return null;
+    const f  = interpAt(derivativesData.x0, derivativesData.y0, x);
+    const f2 = interpAt(derivativesData.x2, derivativesData.y2, x);
+    if (f == null || f2 == null) return null;
+    return f * f2;
+  };
+
+  const prodA = productAt(a);
+  const prodB = productAt(b);
+
+  // --- Odporúčaný štartovací bod: krajný bod kde f(x)·f''(x) > 0 (podmienka štartu) ---
   let recommendedLabel = null;
   let oppositeLabel    = null;
+
   if (a != null && b != null) {
-    if (mX != null) {
-      const mIsA   = Math.abs(mX - a) < 1e-9;
+    if (prodA != null && prodB != null && (prodA > 0 || prodB > 0)) {
+      // splnená podmienka len v jednom krajnom bode → ten odporúčame.
+      // ak by (zriedkavo) platila v oboch, vyberieme bod s väčšou rezervou.
+      const aWins = prodA > 0 && (prodB <= 0 || prodA >= prodB);
+      recommendedLabel = aWins ? "a" : "b";
+      oppositeLabel    = aWins ? "b" : "a";
+    } else if (mX != null) {
+      // záloha (ak nie sú dáta derivácií): krajný bod ďalej od m
+      const mIsA = Math.abs(mX - a) < 1e-9;
       recommendedLabel = mIsA ? "b" : "a";
       oppositeLabel    = mIsA ? "a" : "b";
     } else {
@@ -55,6 +110,15 @@ export default function Step4StartPoint({
   const x0Valid      = !isNaN(x0val) && inputError === null && x0Input !== "";
   const x0InInterval = x0Valid && a != null && b != null && x0val >= a && x0val <= b;
 
+  // Podmienka 3 pre konkrétny zadaný x₀ — počítame lokálne z kriviek,
+  // s návratom na prop condition3Result, ak dáta derivácií nie sú dostupné.
+  let localCond3 = null;
+  if (derivativesData && x0Valid) {
+    const p = productAt(x0val);
+    if (p != null) localCond3 = p > 1e-12;
+  }
+  const effectiveCond3 = localCond3 !== null ? localCond3 : condition3Result;
+
   const handleX0Change = val => {
     setInputError(getInputValidationError(val));
     onX0Change(val);
@@ -77,27 +141,27 @@ export default function Step4StartPoint({
     setVerified(true);
   };
 
-  const showCond3Result = verified && verifiedStatus === "good" && condition3Result !== null;
+  const showCond3Result = verified && verifiedStatus === "good" && effectiveCond3 !== null;
 
-  const steps = [
-    {
-      n: "1",
-      title: "Nájdi bod m na grafe",
-      text: "Nájdi bod m na grafe: Bod m je minimum f′(x), na grafe viditeľný ako miesto, kde je krivka najbližšie k nule. Dotyčnica je tam takmer rovnobežná s osou x, preto metóda odskočí ďaleko od koreňa.",
-    },
-    {
-      n: "2",
-      title: "Vyber krajný bod čo najďalej od m",
-      text: "Vyber ten krajný bod (a alebo b), ktorý je čo najďalej od m. Ak m leží blízko alebo priamo na jednej z hraníc (napr. pri b), zvoľ ako počiatočný bod x₀ opačný krajný bod (a). Čím väčšia je vzdialenosť od m, tým rýchlejšie metóda konverguje.",
-    },
-  ];
+const steps = [
+  {
+    n: "1",
+    title: "Pozri sa na graf f(x) a f″(x)",
+    text: "Na separačnom intervale ⟨a; b⟩ má f″(x) stále rovnaké znamienko. Žltá krivka leží celá nad osou x alebo celá pod ňou. Koreň α leží vo vnútri intervalu, takže f(a) a f(b) majú opačné znamienka.",
+  },
+  {
+    n: "2",
+    title: "Vyber ten krajný bod, kde f a f″ majú rovnaké znamienko",
+    text: "V jednom z krajných bodov separačného intervalu platí f(x₀) · f″(x₀) > 0. Každá iterácia sa pohybuje jedným smerom k riešeniu bez preskokov. Vyber práve ten bod, v ktorom sú obe hodnoty rovnakého znamienka.",
+  },
+];
 
   return (
     <div>
       {/* Podmienka box — sivý */}
       <div style={{
         padding: '10px 14px', marginBottom: '12px',
-        background: 'rgba(255,255,255,0.04)',
+        background: 'var(--color-bg)',
         border: '1px solid var(--color-border)',
         borderRadius: '6px',
       }}>
@@ -118,7 +182,7 @@ export default function Step4StartPoint({
       {/* Collapsible guide */}
       <div style={{
         marginBottom: '14px',
-        background: 'rgba(255,255,255,0.04)',
+        background: 'var(--color-bg)',
         border: '1px solid var(--color-border)',
         borderRadius: '6px',
         overflow: 'hidden',
@@ -132,9 +196,9 @@ export default function Step4StartPoint({
             fontSize: '13px', fontWeight: 'bold', textAlign: 'left',
           }}
         >
-          <span style={{ color: 'var(--color-text)', fontSize: '15px'}}>Ako vybrať správny štartovací bod?</span>
+          <span style={{ color: 'var(--color-text)', fontSize: '16px'}}>Ako vybrať správny štartovací bod?</span>
           <span style={{
-            fontSize: '13px', color: 'rgba(220,220,224,0.7)',
+            fontSize: '15px', color: 'rgba(220,220,224,0.7)',
             padding: '2px 8px', borderRadius: '4px',
             background: 'rgba(255,255,255,0.07)',
             border: '1px solid var(--color-border)',
@@ -304,7 +368,7 @@ export default function Step4StartPoint({
                 Odporúčame použiť {recommendedLabel} = {fmt(recommendedVal)}
               </div>
               <div style={{ fontSize: '15px', color: 'var(--color-axis)', marginBottom: '8px' }}>
-                Konvergencia je spoľahlivejšia z krajného bodu ďalej od m.
+                V tomto krajnom bode platí f(x₀) · f″(x₀) &gt; 0, zaručená monotónna konvergencia.
               </div>
               <button
                 onClick={applyRecommended}
@@ -320,8 +384,8 @@ export default function Step4StartPoint({
 
       {/* Condition 3 result */}
       {showCond3Result && (
-        <div style={msgStyle(condition3Result ? "success" : "warning")}>
-          {condition3Result
+        <div style={msgStyle(effectiveCond3 ? "success" : "warning")}>
+          {effectiveCond3
             ? "\u2713 f(x\u2080) \u00b7 f\u2033(x\u2080) > 0 \u2014 podmienka 3 splnen\u00e1."
             : "\u26a0 f(x\u2080) \u00b7 f\u2033(x\u2080) \u2264 0 \u2014 sk\u00faste opa\u010dn\u00fd krajn\u00fd bod."}
         </div>

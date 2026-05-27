@@ -14,6 +14,5 @@ def home():
 @app.route("/static/<path:filename>")
 def static_file(filename):
     return send_from_directory(STATIC_DIR, filename)
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
