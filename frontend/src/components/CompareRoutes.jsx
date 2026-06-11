@@ -45,9 +45,9 @@ function CompareRoutes({
                 className="w-full mb-5 bg-white/40 rounded-lg p-2 focus:ring-2 focus:ring-red-400"
             >
                 <option value="shortest">Najkratšia trasa</option>
-                <option value="avoidTrafficLights">Vyhnúť sa semaforom</option>
+                <option value="avoidTrafficLights">Vyhnúť sa semaforom (Úspora paliva)</option>
                 <option value="fastest">Najrýchlejšia trasa</option>
-                <option value="smoothness">Najplynulejšia trasa</option>
+                <option value="smoothness">Najplynulejšia trasa (Kvalita povrchu)</option>
                 <option value="hgv">Pre nákladné vozidlá</option>
             </select>
 
