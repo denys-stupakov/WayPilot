@@ -22,7 +22,7 @@ export default function OSMRoads() {
   const [routes, setRoutes] = useState([]);
   const [visibleRoutes, setVisibleRoutes] = useState({});
   const [mode1, setMode1] = useState("shortest");
-  const [mode2, setMode2] = useState("trafficLights");
+  const [mode2, setMode2] = useState("avoidTrafficLights");
   const [stops, setStops] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
   const [addStopId, setAddStopId] = useState(false);
@@ -53,8 +53,8 @@ export default function OSMRoads() {
       return newStops;
     });
 
-    if (isRoute1) setRoutes1(prev => [...prev, { ...route, key }]);
-    else setRoutes2(prev => [...prev, { ...route, key }]);
+    if (isRoute1) setRoutes1(prev => [...prev, { ...route, key, segmentIndex: index }]);
+    else setRoutes2(prev => [...prev, { ...route, key, segmentIndex: index }]);
 
     setRoutes(prev => [...prev, { key, polyline: route.smoothPathCoords, color, visible: true }]);
     setVisibleRoutes(prev => ({ ...prev, [key]: true }));
@@ -67,7 +67,7 @@ export default function OSMRoads() {
     setRoutes1([]);
     setRoutes2([]);
     setVisibleRoutes({});
-    setvehicleWeight(0);
+    setvehicleWeight(7.5);
     if (sourceRef.current) {
       sourceRef.current.close();
       sourceRef.current = null;
@@ -76,7 +76,7 @@ export default function OSMRoads() {
 
   // ---------------- Start streaming routes ----------------
   function startStreamingRoutes() {
-    if (stops.length < 2) return alert("Add at least 2 stops");
+    if (stops.length < 2) return alert("Pridajte aspoň 2 zastávky");
 
     // Close previous stream if exists
     if (sourceRef.current) {
@@ -96,13 +96,19 @@ export default function OSMRoads() {
     setVisibleRoutes({});
 
     source.addEventListener("error", e => {
+      // EventSource also fires "error" on connection drop — тогда e.data пустой
+      if (!e.data) {
+        console.error("SSE connection error");
+        return;
+      }
       try {
         const data = JSON.parse(e.data);
-        switch (data.type) {
-          case "invalid_stop":
-                alert(`Zastávka na indexe ${data.index} je príliš ďaleko od známych ciest.`);
-            console.error("Unknown server error:", data);
+        if (data.type === "invalid_stop") {
+          alert(`Zastávka na indexe ${data.index} je príliš ďaleko od známych ciest.`);
+        } else {
+          alert(data.message || "Chyba pri výpočte trasy.");
         }
+        console.error("Server error event:", data);
       } catch (err) {
         console.error("Failed to parse error event:", err);
       }

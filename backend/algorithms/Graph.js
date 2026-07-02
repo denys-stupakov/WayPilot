@@ -1,14 +1,3 @@
-class Edge {
-  constructor(from, to, distance, roadId, weight, coords) {
-    this.to = to
-    this.from = from
-    this.distance = distance
-    this.roadId = roadId
-    this.weight = weight
-    this.coords = coords
-  }
-}
-
 class Graph {
   constructor(vertexCount) {
     this.vertexCount = vertexCount
@@ -26,16 +15,6 @@ class Graph {
       distance: edge.distance,
       weights: edge.weights
     });
-  }
-
-  getSortedEdges(ascending = true) {
-    return [...this.edges].sort((a, b) =>
-      ascending ? a.weight - b.weight : b.weight - a.weight
-    );
-  }
-
-  getSmallestWeight() {
-    return this.getSortedEdges()[0].weight
   }
 }
 

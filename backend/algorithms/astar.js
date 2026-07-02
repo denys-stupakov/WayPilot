@@ -172,7 +172,6 @@ const PROFILES = {
     canTraverse(edge, vehicleWeight) {
       if (edge.weights?.maxweight) {
         const maxWeight = parseFloat(edge.weights.maxweight);
-        console.log(`skipped ${edge.weights.maxweight}`)
         return vehicleWeight <= maxWeight;
       }
       return true;
@@ -242,7 +241,6 @@ const PROFILES = {
 
       if (edge.weights?.maxweight) {
         const maxWeight = parseFloat(edge.weights.maxweight);
-        console.log(`${vehicleWeight <= maxWeight}, ${edge.weights.maxweight}, ${vehicleWeight}`)
         return vehicleWeight <= maxWeight;
       }
       return true;

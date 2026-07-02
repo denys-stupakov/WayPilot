@@ -43,6 +43,7 @@ function RoutesSidebar({
           {routes1.map((route, idx) => {
             if (!route.key) return null;
             const hasPath = route.smoothPathCoords?.length > 0;
+            const seg = route.segmentIndex ?? idx;
 
             return (
               <div
@@ -52,7 +53,7 @@ function RoutesSidebar({
                 onClick={() => toggleRouteVisibility(route.key)}
               >
                 <div className="text-sm">
-                  {idx + 1} → {idx + 2} |{" "}
+                  {seg + 1} → {seg + 2} |{" "}
                   {hasPath ? (
                     <>
                       {(route.distance / 1000).toFixed(2)} km |{" "}
@@ -82,6 +83,7 @@ function RoutesSidebar({
           {routes2.map((route, idx) => {
             if (!route.key) return null;
             const hasPath = route.smoothPathCoords?.length > 0;
+            const seg = route.segmentIndex ?? idx;
 
             return (
               <div
@@ -91,7 +93,7 @@ function RoutesSidebar({
                 onClick={() => toggleRouteVisibility(route.key)}
               >
                 <div className="text-sm">
-                  {idx + 1} → {idx + 2} |{" "}
+                  {seg + 1} → {seg + 2} |{" "}
                   {hasPath ? (
                     <>
                       {(route.distance / 1000).toFixed(2)} km |{" "}

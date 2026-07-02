@@ -18,7 +18,10 @@ const roadDefaultTags = {
 async function getRoads() {
   const nodes = new Nodes();
   const nodeDegree = new Map();
-  
+
+  // stable incremental id for each parsed road (replaces Math.random())
+  let roadIdCounter = 0;
+
   // roads will be merged later
   let roads = [];
 
@@ -65,7 +68,7 @@ async function getRoads() {
         const smoothness = feature.properties?.smoothness || "intermediate";
 
         roads.push({
-          id: Math.random(),
+          id: roadIdCounter++,
           coords: coords.map((c) => [c.lat, c.lon]),
           nodes: nodeIds,
           highway,

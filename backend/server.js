@@ -55,72 +55,70 @@ app.get("/route-stream", async (req, res) => {
     Connection: "keep-alive",
   });
 
-  const stops = JSON.parse(req.query.stops);
-  const { mode1 = "normal", mode2 = "trafficLights", vehicleWeight = 0 } = req.query;
+  const sendError = (payload) =>
+    res.write(`event: error\ndata: ${JSON.stringify(payload)}\n\n`);
 
-  console.log(vehicleWeight)
-
-  if (!Array.isArray(stops) || stops.length < 2) {
-    res.write(`event: error\ndata: Invalid stops\n\n`);
-    return res.end();
-  }
-
-  for (let i = 0; i < stops.length - 1; i++) {
-    const start = stops[i];
-    const end = stops[i + 1];
-
-    const startNearest = findNearest(start.lat, start.lng);
-    const endNearest = findNearest(end.lat, end.lng);
-
-    if (!startNearest || !endNearest) {
-      // send an error event to client
-      res.write(`event: error\ndata: ${JSON.stringify({
-        type: "invalid_stop",
-        message: "Zastávka je príliš ďaleko od známych ciest",
-        index: i
-      })}\n\n`);
-
-      continue; // skip this segment
+  try {
+    let stops;
+    try {
+      stops = JSON.parse(req.query.stops);
+    } catch {
+      sendError({ type: "bad_request", message: "Neplatný parameter stops" });
+      return res.end();
     }
 
-    const startId = startNearest.id;
-    const endId = endNearest.id;
+    const { mode1 = "shortest", mode2 = "avoidTrafficLights", vehicleWeight = 0 } = req.query;
+    const weight = parseFloat(vehicleWeight) || 0;
 
-    // include snapped coordinates for client
-    start.snapped = { lat: startNearest.lat, lng: startNearest.lon };
-    end.snapped = { lat: endNearest.lat, lng: endNearest.lon };
+    if (!Array.isArray(stops) || stops.length < 2) {
+      sendError({ type: "bad_request", message: "Sú potrebné aspoň 2 zastávky" });
+      return res.end();
+    }
 
-    // --- Compute and send route1 ---
-    const route1 = astar(graph, nodes, startId, endId, { profile: mode1, vehicleWeight: parseFloat(vehicleWeight) || 0 },);
-    res.write(`event: route1\ndata: ${JSON.stringify({ index: i, route1, start, end })}\n\n`);
+    for (let i = 0; i < stops.length - 1; i++) {
+      const start = stops[i];
+      const end = stops[i + 1];
 
-    // ⚡ Give Node time to flush the buffer before route2
-    await new Promise(resolve => setImmediate(resolve));
+      const startNearest = findNearest(start.lat, start.lng);
+      const endNearest = findNearest(end.lat, end.lng);
 
-    // --- Compute route2 (optional) ---
-    let route2 = null;
+      if (!startNearest || !endNearest) {
+        sendError({
+          type: "invalid_stop",
+          message: "Zastávka je príliš ďaleko od známych ciest",
+          index: i,
+        });
+        continue; // skip this segment
+      }
 
-    route2 = astar(
-      graph,
-      nodes,
-      startId,
-      endId,
-      { profile: mode2, vehicleWeight: parseFloat(vehicleWeight) || 0 },
-    );
+      const startId = startNearest.id;
+      const endId = endNearest.id;
 
-    res.write(
-      `event: route2\ndata: ${JSON.stringify({
-        index: i,
-        route2,
-        start,
-        end
-      })}\n\n`
-    );
+      // include snapped coordinates for client
+      start.snapped = { lat: startNearest.lat, lng: startNearest.lon };
+      end.snapped = { lat: endNearest.lat, lng: endNearest.lon };
 
-    await new Promise(resolve => setImmediate(resolve));
+      // --- Compute and send route1 ---
+      const route1 = astar(graph, nodes, startId, endId, { profile: mode1, vehicleWeight: weight });
+      res.write(`event: route1\ndata: ${JSON.stringify({ index: i, route1, start, end })}\n\n`);
+
+      // ⚡ Give Node time to flush the buffer before route2
+      await new Promise(resolve => setImmediate(resolve));
+
+      // --- Compute route2 ---
+      const route2 = astar(graph, nodes, startId, endId, { profile: mode2, vehicleWeight: weight });
+      res.write(`event: route2\ndata: ${JSON.stringify({ index: i, route2, start, end })}\n\n`);
+
+      await new Promise(resolve => setImmediate(resolve));
+    }
+
+    res.write("event: end\ndata: done\n\n");
+    res.end();
+  } catch (err) {
+    console.error("/route-stream error:", err);
+    sendError({ type: "server_error", message: "Chyba pri výpočte trasy" });
+    res.end();
   }
-  res.write("event: end\ndata: done\n\n");
-  res.end();
 });
 
 const PORT = 3001;

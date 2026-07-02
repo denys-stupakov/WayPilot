@@ -1,6 +1,5 @@
 const Graph = require("./algorithms/Graph");
 const fastHaversine = require("./algorithms/fastHaversine");
-const calculateMinRadius = require("./algorithms/calculateMinRadius");
 
 function buildGraph(roads, nodes) {
   let graph = new Graph(nodes.importantNodeIds.length);
@@ -28,8 +27,6 @@ function buildGraph(roads, nodes) {
         );
       }
 
-      let minRadius = calculateMinRadius(segment);
-
       nodes.addSegment(start.nodeId, end.nodeId, segment);
       graph.addEdge(
         start.nodeId,
@@ -43,8 +40,7 @@ function buildGraph(roads, nodes) {
           maxheight: road.maxheight,
           smoothness: road.smoothness,
           maxwidth: road?.lanes_forward * 3.0 || 3.0,
-          hgv: road.hgv,
-          minRadius
+          hgv: road.hgv
         },
         [
           road.coords[start.idx],
@@ -66,8 +62,7 @@ function buildGraph(roads, nodes) {
             maxweight: road.maxweight,
             maxheight: road.maxheight,
             maxwidth: road?.lanes_backward * 3.0 || 3.0,
-            hgv: road.hgv,
-            minRadius
+            hgv: road.hgv
           },
           [
             road.coords[end.idx],
